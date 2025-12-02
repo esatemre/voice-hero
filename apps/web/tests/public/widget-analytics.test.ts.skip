@@ -1,0 +1,459 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { JSDOM } from 'jsdom';
+
+describe('Widget Analytics', () => {
+    let dom: JSDOM;
+    let window: Window & typeof globalThis;
+    let document: Document;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let VoiceHeroWidget: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let mockFetch: any;
+
+    beforeEach(() => {
+        // Create a fresh DOM for each test
+        dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+            url: 'http://localhost',
+        });
+        window = dom.window as Window & typeof globalThis;
+        document = window.document;
+
+        // Spy on console
+        vi.spyOn(console, 'error');
+        vi.spyOn(console, 'warn');
+        vi.spyOn(console, 'log');
+
+        // Mock fetch with logging
+        mockFetch = vi.fn((url, options) => {
+            console.log(`[MockFetch] ${url}`, options);
+            return Promise.resolve({
+                ok: true,
+                json: async () => ({ success: true }),
+            });
+        });
+        global.fetch = mockFetch;
+        globalThis.fetch = mockFetch;
+        window.fetch = mockFetch;
+
+        // Mock sendBeacon on both global and window
+        const mockBeacon = vi.fn();
+        if (typeof navigator !== 'undefined') {
+            Object.defineProperty(navigator, 'sendBeacon', {
+                value: mockBeacon,
+                writable: true
+            });
+        }
+        if (window.navigator) {
+            Object.defineProperty(window.navigator, 'sendBeacon', {
+                value: mockBeacon,
+                writable: true
+            });
+        }
+
+        // Mock localStorage
+        const localStorageMock = {
+            getItem: vi.fn(),
+            setItem: vi.fn(),
+            removeItem: vi.fn(),
+            clear: vi.fn(),
+        };
+        Object.defineProperty(window, 'localStorage', {
+            value: localStorageMock,
+            writable: true,
+        });
+
+        // Mock performance
+        Object.defineProperty(window, 'performance', {
+            value: { now: () => 1000 },
+            writable: true,
+        });
+
+        // Load widget code in the DOM context
+        const script = document.createElement('script');
+        script.setAttribute('data-site-id', 'test-site-123');
+        script.src = 'http://localhost/widget.js';
+
+        // Mock document.currentScript
+        Object.defineProperty(document, 'currentScript', {
+            value: script,
+            writable: true,
+        });
+
+        // Evaluate widget code in the window context
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const widgetCode = require('fs').readFileSync(
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            require('path').join(__dirname, '../../public/widget.js'),
+            'utf-8'
+        );
+
+        // Inject console log to verify execution
+        const modifiedWidgetCode = widgetCode + '\nconsole.log("Widget code evaluated");';
+
+        const widgetFunction = new Function('window', 'document', modifiedWidgetCode);
+        widgetFunction(window, document);
+
+        VoiceHeroWidget = window.VoiceHeroWidget;
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    describe('AnalyticsManager', () => {
+        it('should generate and persist a session ID', () => {
+            const widget = new VoiceHeroWidget();
+            const analytics = widget.analytics;
+
+            expect(analytics.sessionId).toBeDefined();
+            expect(typeof analytics.sessionId).toBe('string');
+            expect(analytics.sessionId.length).toBeGreaterThan(0);
+
+            // Should persist to localStorage
+            expect(window.localStorage.setItem).toHaveBeenCalledWith(
+                'vh-session-id',
+                analytics.sessionId
+            );
+        });
+
+        it('should reuse existing session ID from localStorage', () => {
+            const existingSessionId = 'existing-session-123';
+            window.localStorage.getItem = vi.fn(() => existingSessionId);
+
+            const widget = new VoiceHeroWidget();
+            const analytics = widget.analytics;
+
+            expect(analytics.sessionId).toBe(existingSessionId);
+        });
+
+        it('should collect device and browser context', () => {
+            const widget = new VoiceHeroWidget();
+            const analytics = widget.analytics;
+            const context = analytics.getContext();
+
+            expect(context).toHaveProperty('deviceType');
+            expect(context).toHaveProperty('userAgent');
+            expect(context).toHaveProperty('language');
+            expect(context).toHaveProperty('screenResolution');
+            expect(context).toHaveProperty('referrer');
+        });
+
+        it('should extract UTM parameters from URL', () => {
+            // Create new DOM with UTM params
+            dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+                url: 'http://localhost?utm_source=google&utm_medium=cpc&utm_campaign=test',
+            });
+            window = dom.window as Window & typeof globalThis;
+
+            const widget = new VoiceHeroWidget();
+            const analytics = widget.analytics;
+            const context = analytics.getContext();
+
+            expect(context.utmSource).toBe('google');
+            expect(context.utmMedium).toBe('cpc');
+            expect(context.utmCampaign).toBe('test');
+        });
+
+        it('should detect device type correctly', () => {
+            // Test mobile
+            Object.defineProperty(window.navigator, 'userAgent', {
+                value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)',
+                configurable: true,
+            });
+
+            let widget = new VoiceHeroWidget();
+            let context = widget.analytics.getContext();
+            expect(context.deviceType).toBe('mobile');
+
+            // Test tablet
+            Object.defineProperty(window.navigator, 'userAgent', {
+                value: 'Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X)',
+                configurable: true,
+            });
+
+            widget = new VoiceHeroWidget();
+            context = widget.analytics.getContext();
+            expect(context.deviceType).toBe('tablet');
+
+            // Test desktop
+            Object.defineProperty(window.navigator, 'userAgent', {
+                value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                configurable: true,
+            });
+
+            widget = new VoiceHeroWidget();
+            context = widget.analytics.getContext();
+            expect(context.deviceType).toBe('desktop');
+        });
+    });
+
+    describe('Event Tracking', () => {
+        it('should track widget.loaded event on initialization', () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: async () => ({ success: true }),
+            });
+
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const widget = new VoiceHeroWidget();
+
+            // Give time for async tracking
+            setTimeout(() => {
+                expect(mockFetch).toHaveBeenCalledWith(
+                    expect.stringContaining('/api/analytics'),
+                    expect.objectContaining({
+                        method: 'POST',
+                        body: expect.stringContaining('widget.loaded'),
+                    })
+                );
+            }, 100);
+        });
+
+        it('should track events with correct structure', () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: async () => ({ success: true }),
+            });
+
+            const widget = new VoiceHeroWidget();
+            widget.analytics.track('test.event', { testData: 'value' });
+
+            setTimeout(() => {
+                const call = mockFetch.mock.calls.find((c: any[]) => c[0].includes('/api/analytics'));
+                expect(call).toBeDefined();
+                const body = JSON.parse(call[1].body);
+
+                expect(body.event).toHaveProperty('sessionId');
+                expect(body.event).toHaveProperty('eventType', 'test.event');
+                expect(body.event).toHaveProperty('timestamp');
+                expect(body.event).toHaveProperty('projectId');
+                expect(body.event).toHaveProperty('segmentType');
+                expect(body.event).toHaveProperty('metadata');
+                expect(body.event.metadata.testData).toBe('value');
+            }, 200);
+        });
+
+        it('should send events in real-time mode (immediately)', () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: async () => ({ success: true }),
+            });
+
+            const widget = new VoiceHeroWidget();
+            widget.analytics.track('audio.play', {});
+
+            // Should send immediately (within buffer threshold)
+            setTimeout(() => {
+                const calls = mockFetch.mock.calls.filter((c: any[]) => c[0].includes('/api/analytics'));
+                expect(calls.length).toBeGreaterThan(0);
+            }, 200);
+        });
+
+        it('should batch events when in fallback mode', () => {
+            let requestCount = 0;
+            mockFetch.mockImplementation(() => {
+                requestCount++;
+                if (requestCount === 1) {
+                    // Fail first request to trigger fallback
+                    return Promise.reject(new Error('Network error'));
+                }
+                return Promise.resolve({
+                    ok: true,
+                    json: async () => ({ success: true }),
+                });
+            });
+
+            const widget = new VoiceHeroWidget();
+
+            // Track multiple events
+            widget.analytics.track('event1', {});
+            widget.analytics.track('event2', {});
+            widget.analytics.track('event3', {});
+
+            // Should batch them together
+            setTimeout(() => {
+                const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+                const body = JSON.parse(lastCall[1].body);
+                expect(body.events).toBeDefined();
+                expect(body.events.length).toBeGreaterThan(1);
+            }, 11000); // After batch interval
+        });
+
+        it('should handle network failures gracefully', () => {
+            mockFetch.mockRejectedValue(new Error('Network error'));
+
+            const widget = new VoiceHeroWidget();
+
+            // Should not throw
+            expect(() => {
+                widget.analytics.track('test.event', {});
+            }).not.toThrow();
+        });
+
+        it('should include segment and version information', async () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: async () => ({
+                    segments: [
+                        {
+                            id: 'seg-1',
+                            type: 'new_visitor',
+                            audioUrl: 'https://example.com/audio-v2.mp3',
+                            version: 2,
+                        },
+                    ],
+                }),
+            });
+
+            const widget = new VoiceHeroWidget();
+            await widget.fetchData();
+
+            widget.analytics.track('audio.play', {});
+
+            setTimeout(() => {
+                const call = mockFetch.mock.calls.find((c: any[]) =>
+                    c[0].includes('/api/analytics')
+                );
+                const body = JSON.parse(call[1].body);
+
+                expect(body.event.segmentId).toBe('seg-1');
+                expect(body.event.segmentType).toBe('new_visitor');
+                expect(body.event.audioVersion).toBe('v2');
+                expect(body.event.scriptVersion).toBe('2');
+            }, 200);
+        });
+    });
+
+    describe('Playback Tracking', () => {
+        it('should track audio.play event when playback starts', () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: async () => ({ success: true }),
+            });
+
+            const widget = new VoiceHeroWidget();
+            const mockAudio = {
+                play: vi.fn(),
+                pause: vi.fn(),
+                currentTime: 0,
+                duration: 20,
+            };
+
+            widget.playAudio('https://example.com/audio.mp3', mockAudio);
+
+            setTimeout(() => {
+                expect(mockFetch).toHaveBeenCalledWith(
+                    expect.stringContaining('/api/analytics'),
+                    expect.objectContaining({
+                        body: expect.stringContaining('audio.play'),
+                    })
+                );
+            }, 100);
+        });
+
+        it('should track progress milestones (25%, 50%, 75%, 100%)', () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: async () => ({ success: true }),
+            });
+
+            const widget = new VoiceHeroWidget();
+            const mockAudio = {
+                play: vi.fn(),
+                currentTime: 0,
+                duration: 20,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ontimeupdate: null as any,
+            };
+
+            widget.playAudio('https://example.com/audio.mp3', mockAudio);
+
+            // Simulate 25% progress
+            mockAudio.currentTime = 5;
+            mockAudio.ontimeupdate?.();
+
+            setTimeout(() => {
+                expect(mockFetch).toHaveBeenCalledWith(
+                    expect.stringContaining('/api/analytics'),
+                    expect.objectContaining({
+                        body: expect.stringContaining('audio.progress.25'),
+                    })
+                );
+            }, 100);
+        });
+
+        it('should track audio.complete when playback finishes', () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: async () => ({ success: true }),
+            });
+
+            const widget = new VoiceHeroWidget();
+            const mockAudio = {
+                play: vi.fn(),
+                currentTime: 20,
+                duration: 20,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onended: null as any,
+            };
+
+            widget.playAudio('https://example.com/audio.mp3', mockAudio);
+            mockAudio.onended?.();
+
+            setTimeout(() => {
+                expect(mockFetch).toHaveBeenCalledWith(
+                    expect.stringContaining('/api/analytics'),
+                    expect.objectContaining({
+                        body: expect.stringContaining('audio.complete'),
+                    })
+                );
+            }, 100);
+        });
+    });
+
+    describe('Conversation Tracking', () => {
+        it('should track conversation.start when mic is clicked', () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: async () => ({ success: true }),
+            });
+
+            const widget = new VoiceHeroWidget();
+            widget.startConversation();
+
+            setTimeout(() => {
+                expect(mockFetch).toHaveBeenCalledWith(
+                    expect.stringContaining('/api/analytics'),
+                    expect.objectContaining({
+                        body: expect.stringContaining('conversation.start'),
+                    })
+                );
+            }, 100);
+        });
+
+        it('should track ai.response with response time', () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: async () => ({
+                    success: true,
+                    audioUrl: 'https://example.com/response.mp3',
+                }),
+            });
+
+            const widget = new VoiceHeroWidget();
+            const startTime = Date.now();
+
+            widget.handleConversationResponse({ audioUrl: '...' }, startTime);
+
+            setTimeout(() => {
+                const call = mockFetch.mock.calls.find((c) =>
+                    c[1]?.body?.includes('ai.response')
+                );
+                expect(call).toBeDefined();
+
+                const body = JSON.parse(call[1].body);
+                expect(body.event.metadata.responseTime).toBeDefined();
+            }, 100);
+        });
+    });
+});

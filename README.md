@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Landing Voice Agent 🎙️
 
-## Getting Started
+**Your homepage, but with a self-optimizing 20-second voice pitch.**
 
-First, run the development server:
+> Built for the **Google Cloud x ElevenLabs Hackathon 2025**.
+> *Challenge: ElevenLabs (Conversational, Intelligent, Voice-Driven)*
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+![Landing Voice Agent Demo](https://via.placeholder.com/800x400?text=Landing+Voice+Agent+Dashboard)
+
+## 🚀 The Problem
+You fight for every click to your homepage. But once visitors arrive, they all see the same static headline.
+- **First-time visitors** are confused.
+- **Returning visitors** are bored.
+- **Ad traffic** hears a generic pitch that doesn't match the ad they clicked.
+
+Static text doesn't adapt. **Voice does.**
+
+## 💡 The Solution
+Landing Voice Agent is a "Voice Sales Agent" that lives on your website.
+1. **Detects** who the visitor is (New, Returning, or from a specific Ad).
+2. **Generates** a tailored 20-second pitch using **Google Vertex AI (Gemini)**.
+3. **Speaks** to them using **ElevenLabs** high-fidelity AI voices.
+4. **Learns** from engagement to write better scripts over time.
+
+## 🛠️ Tech Stack
+
+### 1. Google Cloud Platform (The Brain)
+- **Vertex AI (Gemini Pro)**: We use Gemini to act as an expert copywriter. It analyzes the product description and generates unique scripts for each visitor segment (e.g., "Write a punchy, 15s intro for a returning visitor who hasn't converted yet").
+- **Firestore**: Stores project config, segments, and generated audio mappings.
+- **Cloud Run / Next.js**: The entire platform is hosted on a scalable serverless architecture.
+
+### 2. ElevenLabs (The Voice)
+- **Text-to-Speech API**: We use the `eleven_monolingual_v1` and Turbo models to generate lifelike speech that captures brand tone (Professional, Energetic, Calm).
+- **Voice Design**: Each segment can have a distinct "persona".
+
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    A[Visitor Lands] -->|JS Widget| B{Context?}
+    B -->|New User| C[Get 'New' Segment]
+    B -->|Returning| D[Get 'Returning' Segment]
+    B -->|?utm_source=ads| E[Get 'Ad' Segment]
+    
+    C & D & E --> F[Fetch Audio URL]
+    F --> G[ElevenLabs Audio]
+    
+    subgraph "Optimization Loop (Async)"
+        H[Gemini (Vertex AI)] -->|Drafts Script| I[Review/Approve]
+        I -->|Generate| J[ElevenLabs API]
+        J -->|Save URL| K[Firestore]
+    end
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📦 Getting Started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Prerequisites
+- Node.js 18+
+- Google Cloud Service Account (Vertex AI & Firestore enabled)
+- ElevenLabs API Key
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Installation
 
-## Learn More
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/yourusername/pitchvoice.git
+   cd pitchvoice
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Configure Environment**
+   Copy `.env.example` to `.env.local` and add your keys:
+   ```bash
+   ELEVENLABS_API_KEY=your-elevenlabs-key
+   
+   # Firebase
+   NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-auth-domain
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-storage-bucket
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your-measurement-id
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. **Run Locally**
+   ```bash
+   npm run dev
+   ```
 
-## Deploy on Vercel
+5. **Open the Dashboard**
+   Visit `http://localhost:3000/dashboard` to create your first project.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔮 Roadmap
+We have big plans to turn Landing Voice Agent into a fully conversational agent.
+See [ROADMAP.md](./ROADMAP.md) for our vision of two-way voice conversations and reinforcement learning loops.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📄 License
+MIT License.

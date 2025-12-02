@@ -1,0 +1,86 @@
+name: Build and Deploy
+
+env:
+  NODE_VERSION: 22.x
+  NODE_ENV: production
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: 📦 Install dependencies (workspace-aware)
+        run: |
+          pnpm install --frozen-lockfile
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -f apps/web/Dockerfile \
+            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY="${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID="${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_APP_ID="${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID="${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}" \
+            --build-arg NEXT_PUBLIC_APP_URL="${{ secrets.NEXT_PUBLIC_APP_URL }}" \
+            -t voice-hero-web .
+
+      - name: Login to GitHub Container Registry
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push to GitHub Container Registry
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Convert repository name to lowercase for Docker image naming
+          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME=ghcr.io/$REPO_NAME/web
+          
+          docker tag voice-hero-web $IMAGE_NAME:latest
+          docker tag voice-hero-web $IMAGE_NAME:${{ github.sha }}
+          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:${{ github.sha }}
+
+      - name: Deploy to Coolify
+        if: github.ref == 'refs/heads/main'
+        run: |
+          set -e
+          # Only run if the webhook URL is set
+          if [ -n "${{ secrets.WEB_DEPLOY_WEBHOOK_URL }}" ]; then
+            RESPONSE=$(curl --write-out "HTTPSTATUS:%{http_code}" --silent --show-error "${{ secrets.WEB_DEPLOY_WEBHOOK_URL }}" --header "Authorization: Bearer ${{ secrets.COOLIFY_DEPLOY_TOKEN }}")
+            BODY=$(echo "$RESPONSE" | sed -e 's/HTTPSTATUS\:.*//g')
+            STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+            echo "Response body:"
+            echo "$BODY"
+            echo "HTTP status code: $STATUS"
+            if [ "$STATUS" -ne 200 ]; then
+              echo "Coolify deployment webhook failed with status $STATUS"
+              exit 1
+            fi
+          else
+            echo "WEB_DEPLOY_WEBHOOK_URL not set, skipping deployment trigger."
+          fi
