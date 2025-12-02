@@ -1,6 +1,6 @@
-# Landing Voice Agent Roadmap
+# Voice Hero Roadmap
 
-Landing Voice Agent is built to evolve from a smart monologue into a fully conversational sales agent. This roadmap outlines our path from the current Hackathon MVP to a production-grade, self-optimizing platform.
+Voice Hero is built to evolve from a smart monologue into a fully conversational sales agent. This roadmap outlines our path from the current Hackathon MVP to a production-grade, self-optimizing platform.
 
 ## Phase 1: The Foundation (Current MVP)
 **Goal:** Prove that segment-aware voice intros increase engagement.

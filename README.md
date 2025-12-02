@@ -1,11 +1,11 @@
-# Landing Voice Agent 🎙️
+# Voice Hero - Landing Voice Agent 🎙️
 
 **Your homepage, but with a self-optimizing 20-second voice pitch.**
 
 > Built for the **Google Cloud x ElevenLabs Hackathon 2025**.
 > *Challenge: ElevenLabs (Conversational, Intelligent, Voice-Driven)*
 
-![Landing Voice Agent Demo](https://via.placeholder.com/800x400?text=Landing+Voice+Agent+Dashboard)
+![Voice Hero Demo](https://via.placeholder.com/800x400?text=Voice+Hero+Dashboard)
 
 ## 🚀 The Problem
 You fight for every click to your homepage. But once visitors arrive, they all see the same static headline.
@@ -63,8 +63,8 @@ graph TD
 
 1. **Clone the repo**
    ```bash
-   git clone https://github.com/yourusername/pitchvoice.git
-   cd pitchvoice
+   git clone https://github.com/esatemre/voice-hero.git
+   cd voice-hero
    ```
 
 2. **Install dependencies**
@@ -96,7 +96,7 @@ graph TD
    Visit `http://localhost:3000/dashboard` to create your first project.
 
 ## 🔮 Roadmap
-We have big plans to turn Landing Voice Agent into a fully conversational agent.
+We have big plans to turn Voice Hero into a fully conversational agent.
 See [ROADMAP.md](./ROADMAP.md) for our vision of two-way voice conversations and reinforcement learning loops.
 
 ## 📄 License

@@ -47,4 +47,4 @@ VoiceHero is a SaaS that generates personalized voice pitches for website visito
 A demo page is available at `http://localhost:3000/demo.html`.
 Make sure to replace `DATA-SITE-ID` with your actual project ID in the HTML file.
 
-The main landing page is at `http://localhost:3000/` and showcases the "Landing Voice Agent" branding.
+The main landing page is at `http://localhost:3000/` and showcases the "Voice Hero" branding.

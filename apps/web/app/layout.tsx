@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Landing Voice Agent - Self-Optimizing Voice Pitches for Your Website",
+  title: "Voice Hero - Self-Optimizing Voice Pitches for Your Website",
   description: "Add a 20-second, AI-powered voice intro to your homepage that adapts to every visitor. Built with Google Cloud and ElevenLabs.",
 };
 

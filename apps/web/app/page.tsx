@@ -41,7 +41,7 @@ export default function LandingPage() {
             <div className="bg-primary text-primary-foreground p-1 rounded-lg">
               <Mic className="h-5 w-5" />
             </div>
-            <span>Landing Voice Agent</span>
+            <span>Voice Hero</span>
           </div>
           <nav className="flex items-center gap-4">
             <Link href="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
@@ -65,7 +65,7 @@ export default function LandingPage() {
           >
             <motion.div variants={item}>
               <Badge variant="secondary" className="mb-6 rounded-full px-4 py-1.5 text-sm border-primary/20 bg-primary/5 text-primary">
-                ✨ Live Hackathon Demo
+                ✨ Now Available: Live Demo
               </Badge>
             </motion.div>
 
@@ -77,7 +77,7 @@ export default function LandingPage() {
             </motion.h1>
 
             <motion.p variants={item} className="max-w-2xl text-lg text-muted-foreground mb-10 leading-relaxed sm:text-xl">
-              Don&apos;t let visitors read in silence. Landing Voice Agent adds a
+              Don&apos;t let visitors read in silence. Voice Hero adds a
               <span className="font-semibold text-foreground"> self-optimizing 20-second audio intro </span>
               that adapts to every visitor.
             </motion.p>
@@ -245,7 +245,7 @@ export default function LandingPage() {
                   <div className="pl-4 text-slate-400">
                     &lt;body&gt;<br />
                     &nbsp;&nbsp;...<br />
-                    &nbsp;&nbsp;<span className="text-blue-500">&lt;script</span> <span className="text-purple-500">src</span>=&quot;<span className="text-yellow-600">https://pitchvoice.ai/widget.js</span>&quot;<span className="text-blue-500">&gt;&lt;/script&gt;</span><br />
+                    &nbsp;&nbsp;<span className="text-blue-500">&lt;script</span> <span className="text-purple-500">src</span>=&quot;<span className="text-yellow-600">https://voicehero.prodfact.com/widget.js</span>&quot;<span className="text-blue-500">&gt;&lt;/script&gt;</span><br />
                     &lt;/body&gt;
                   </div>
                 </div>
@@ -285,7 +285,7 @@ export default function LandingPage() {
             <AccordionItem value="item-5">
               <AccordionTrigger>Does it work with my tech stack?</AccordionTrigger>
               <AccordionContent>
-                Yes. PitchVoice is a simple JavaScript widget that works with any website—WordPress, Shopify, React, Vue, static HTML, or anything else. No backend changes required.
+                Yes. VoiceHero is a simple JavaScript widget that works with any website—WordPress, Shopify, React, Vue, static HTML, or anything else. No backend changes required.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-6">
@@ -309,7 +309,7 @@ export default function LandingPage() {
             <AccordionItem value="item-9">
               <AccordionTrigger>Does it support multiple languages?</AccordionTrigger>
               <AccordionContent>
-                Not yet, but it&apos;s on our roadmap. Currently, PitchVoice works best with English content. Multi-language support with automatic translation is coming in Q1 2026.
+                Not yet, but it&apos;s on our roadmap. Currently, VoiceHero works best with English content. Multi-language support with automatic translation is coming in Q1 2026.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-10">
