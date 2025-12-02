@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAnalytics, Analytics } from "firebase/analytics";
-import { getAI, getGenerativeModel, VertexAIBackend } from "firebase/ai";
+import { getAI, getGenerativeModel, VertexAIBackend, GenerativeModel } from "firebase/ai";
 import { clientEnv } from "./env";
 
 // Your web app's Firebase configuration
@@ -16,41 +16,43 @@ const firebaseConfig = {
     measurementId: clientEnv.FIREBASE_MEASUREMENT_ID
 };
 
+const hasFirebaseConfig = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
+
 // Initialize Firebase
-let app: FirebaseApp;
+let app: FirebaseApp | null = null;
 let analytics: Analytics | null = null;
+let ai: ReturnType<typeof getAI> | null = null;
+let model: GenerativeModel | null = null;
 
-// Only initialize if not already initialized
-if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
+if (hasFirebaseConfig) {
+    const existingApps = getApps();
+    app = existingApps.length ? existingApps[0] : initializeApp(firebaseConfig);
+
+    if (typeof window !== 'undefined') {
+        analytics = getAnalytics(app);
+    }
+
+    ai = getAI(app, { backend: new VertexAIBackend() });
+    model = getGenerativeModel(ai, {
+        model: 'gemini-2.5-flash',
+        generationConfig: {
+            maxOutputTokens: 2048,
+            temperature: 0.7,
+            topP: 0.8,
+        },
+    });
 } else {
-    app = getApps()[0];
+    console.warn('Firebase client config missing; skipping client initialization. Set NEXT_PUBLIC_FIREBASE_* env vars to enable.');
 }
-
-// Analytics can only be initialized in browser environment
-if (typeof window !== 'undefined') {
-    analytics = getAnalytics(app);
-}
-
-// Initialize the Vertex AI Gemini API backend service
-const ai = getAI(app, { backend: new VertexAIBackend() });
-
-// Create a GenerativeModel instance with gemini-2.5-flash
-const model = getGenerativeModel(ai, {
-    model: 'gemini-2.5-flash',
-    generationConfig: {
-        maxOutputTokens: 2048,
-        temperature: 0.7,
-        topP: 0.8,
-    },
-});
 
 // Initialize Firestore
 import { getFirestore, Firestore } from "firebase/firestore";
 let db: Firestore | null = null;
 
-if (typeof window !== 'undefined') {
+if (hasFirebaseConfig && typeof window !== 'undefined' && app) {
     db = getFirestore(app);
 }
 
-export { app, analytics, ai, model, db };
+const getModel = () => model;
+
+export { app, analytics, ai, model, db, getModel };

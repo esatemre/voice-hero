@@ -1,4 +1,12 @@
-import { model } from '@/lib/firebase';
+import { getModel } from '@/lib/firebase';
+
+function ensureModel() {
+    const model = getModel();
+    if (!model) {
+        throw new Error('Firebase client config is missing. Please set NEXT_PUBLIC_FIREBASE_* environment variables.');
+    }
+    return model;
+}
 
 export async function generateScript(
     productName: string,
@@ -22,6 +30,7 @@ export async function generateScript(
   `;
 
     try {
+        const model = ensureModel();
         const result = await model.generateContent(prompt);
         const response = result.response;
         const text = response.text();
@@ -64,6 +73,7 @@ export async function processScrapedContent(
   `;
 
     try {
+        const model = ensureModel();
         const result = await model.generateContent(prompt);
         const response = result.response;
         const text = response.text();
@@ -103,6 +113,7 @@ export async function generateConversationResponse(
     const audioBase64 = audioBuffer.toString('base64');
 
     try {
+        const model = ensureModel();
         const result = await model.generateContent([
             prompt,
             {

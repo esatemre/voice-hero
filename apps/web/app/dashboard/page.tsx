@@ -4,6 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { getDb } from '@/lib/db';
 import { Project } from '@/lib/types';
 
+
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
     const db = getDb();
     const projectsSnapshot = await db.collection('projects').get();
