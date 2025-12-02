@@ -1,5 +1,9 @@
 import Link from 'next/link';
 
+// Force SSR for dashboard routes so server-only env vars are read at runtime, not during build
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function DashboardLayout({
     children,
 }: {
