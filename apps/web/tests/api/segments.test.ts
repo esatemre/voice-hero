@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '../../app/api/projects/[projectId]/segments/route';
+import { Segment } from '../../lib/types';
 
 // Mock the db module
 const mockBatchSet = vi.fn();
@@ -60,7 +61,9 @@ describe('POST /api/projects/[projectId]/segments', () => {
         expect(data).toHaveLength(3);
 
         // Verify all segments have correct structure
-        data.forEach((segment: any) => {
+        const segments = data as Segment[];
+
+        segments.forEach(segment => {
             expect(segment).toEqual(expect.objectContaining({
                 id: expect.any(String),
                 projectId: mockProjectId,
@@ -90,7 +93,8 @@ describe('POST /api/projects/[projectId]/segments', () => {
         const response = await POST(request, { params });
         const data = await response.json();
 
-        const types = data.map((segment: any) => segment.type);
+        const segments = data as Segment[];
+        const types = segments.map(segment => segment.type);
         expect(types).toContain('new_visitor');
         expect(types).toContain('returning_visitor');
         expect(types).toContain('utm_source');

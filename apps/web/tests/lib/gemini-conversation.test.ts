@@ -17,6 +17,9 @@ vi.mock('@/lib/firebase', () => ({
         generateContent: mockGenerateContent,
     },
     getGenerativeModel: mockGetGenerativeModel,
+    getModel: vi.fn(() => ({
+        generateContent: mockGenerateContent,
+    })),
     ai: {},
 }));
 
