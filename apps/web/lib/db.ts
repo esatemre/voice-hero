@@ -1,7 +1,13 @@
 import * as admin from 'firebase-admin';
 import { serverEnv } from './env';
 
-function getDb() {
+let adminApp: admin.app.App | null = null;
+
+function getAdminApp() {
+    if (adminApp) {
+        return adminApp;
+    }
+
     if (!admin.apps.length) {
         const options: admin.AppOptions = {
             projectId: serverEnv.FIREBASE_PROJECT_ID,
@@ -17,7 +23,13 @@ function getDb() {
 
         admin.initializeApp(options);
     }
-    return admin.firestore();
+
+    adminApp = admin.app();
+    return adminApp;
 }
 
-export { getDb };
+function getDb() {
+    return getAdminApp().firestore();
+}
+
+export { getDb, getAdminApp };

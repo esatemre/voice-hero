@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { maybeSendOnboardingEmail } from '@/lib/onboarding-email';
 
 interface AnalyticsEvent {
     sessionId: string;
@@ -76,6 +77,12 @@ export async function POST(request: NextRequest) {
                 createdAt: new Date(),
             });
 
+            if (event.eventType === 'audio.play') {
+                maybeSendOnboardingEmail(event.projectId, 'go-live').catch((error) => {
+                    console.error('Failed to send go-live email:', error);
+                });
+            }
+
             return NextResponse.json({ success: true });
         }
 
@@ -111,6 +118,18 @@ export async function POST(request: NextRequest) {
             });
 
             await batch.commit();
+
+            const projectIds = new Set<string>();
+            events.forEach((event: AnalyticsEvent) => {
+                if (event.eventType === 'audio.play') {
+                    projectIds.add(event.projectId);
+                }
+            });
+            projectIds.forEach((projectId) => {
+                maybeSendOnboardingEmail(projectId, 'go-live').catch((error) => {
+                    console.error('Failed to send go-live email:', error);
+                });
+            });
 
             return NextResponse.json({
                 success: true,

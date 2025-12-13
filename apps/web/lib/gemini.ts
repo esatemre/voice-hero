@@ -1,4 +1,5 @@
 import { getModel } from '@/lib/firebase';
+import { ScriptCritique, ScriptOptions } from '@/lib/types';
 
 function ensureModel() {
     const model = getModel();
@@ -12,8 +13,22 @@ export async function generateScript(
     productName: string,
     productDescription: string,
     segmentType: string,
-    tone: string
+    tone: string,
+    options: ScriptOptions = {},
 ): Promise<string> {
+    const resolvedTone = options.tone || tone;
+    const languageLine = options.language
+        ? `Language: ${options.language}`
+        : 'Language: English';
+    const lengthLine = options.wordCount
+        ? `Target length: about ${options.wordCount} words.`
+        : options.lengthSeconds
+            ? `Target length: about ${options.lengthSeconds} seconds.`
+            : 'Target length: under 60 words.';
+    const ctaLine = options.ctaFocus
+        ? `Call-to-action focus: ${options.ctaFocus}.`
+        : 'Call-to-action focus: highlight the next best step.';
+
     const prompt = `
     You are a professional copywriter for a SaaS product called "${productName}".
     
@@ -21,12 +36,15 @@ export async function generateScript(
     ${productDescription}
     
     Target Audience Segment: ${segmentType}
-    Tone: ${tone}
+    Tone: ${resolvedTone}
+    ${languageLine}
+    ${lengthLine}
+    ${ctaLine}
     
-    Task: Write a short, engaging 20-second spoken pitch script for this specific visitor segment.
+    Task: Write a short, engaging spoken pitch script for this specific visitor segment.
     The script should be natural, conversational, and persuasive.
     Do not include any scene directions or sound effects, just the spoken words.
-    Keep it under 60 words.
+    If the output is longer than the target, trim it.
   `;
 
     try {
@@ -34,10 +52,103 @@ export async function generateScript(
         const result = await model.generateContent(prompt);
         const response = result.response;
         const text = response.text();
-        return text || 'Error generating script.';
+    return text || 'Error generating script.';
+  } catch (error) {
+    console.error('Error calling Gemini:', error);
+    throw new Error('Failed to generate script');
+  }
+}
+
+export async function critiqueScript(
+    script: string,
+    context: {
+        segmentType: string;
+        tone: string;
+        language?: string;
+        lengthSeconds?: number;
+        wordCount?: number;
+        ctaFocus?: string;
+    },
+): Promise<ScriptCritique> {
+    const lengthLine = context.wordCount
+        ? `Target length: about ${context.wordCount} words.`
+        : context.lengthSeconds
+            ? `Target length: about ${context.lengthSeconds} seconds.`
+            : 'Target length: keep it concise.';
+    const languageLine = context.language
+        ? `Language: ${context.language}.`
+        : 'Language: English.';
+    const ctaLine = context.ctaFocus
+        ? `CTA focus: ${context.ctaFocus}.`
+        : 'CTA focus: identify the clearest next step.';
+
+    const prompt = `
+    You are an expert conversion copywriter.
+
+    Script to critique:
+    ${script}
+
+    Context:
+    Segment: ${context.segmentType}
+    Tone: ${context.tone}
+    ${languageLine}
+    ${lengthLine}
+    ${ctaLine}
+
+    Task: Provide a concise critique with strengths, weaknesses, and specific improvement suggestions.
+    Include a revised script that keeps the intent but improves clarity and persuasion.
+
+    Output JSON only with the following shape:
+    {
+      "score": 0-10,
+      "strengths": ["..."],
+      "weaknesses": ["..."],
+      "suggestions": ["..."],
+      "revisedScript": "..."
+    }
+  `;
+
+    try {
+        const model = ensureModel();
+        const result = await model.generateContent(prompt);
+        const response = result.response;
+        const text = response.text();
+        const jsonString = text.replace(/```json\s*|```/g, '').trim();
+        const data = JSON.parse(jsonString) as ScriptCritique;
+
+        if (!data || typeof data !== 'object') {
+            throw new Error('Invalid critique response');
+        }
+
+        const score = Number((data as ScriptCritique).score);
+        const strengths = Array.isArray(data.strengths) ? data.strengths : null;
+        const weaknesses = Array.isArray(data.weaknesses) ? data.weaknesses : null;
+        const suggestions = Array.isArray(data.suggestions) ? data.suggestions : null;
+        const revisedScript =
+            typeof data.revisedScript === 'string' ? data.revisedScript : null;
+
+        if (
+            !Number.isFinite(score) ||
+            score < 0 ||
+            score > 10 ||
+            !strengths ||
+            !weaknesses ||
+            !suggestions ||
+            revisedScript === null
+        ) {
+            throw new Error('Invalid critique response');
+        }
+
+        return {
+            score,
+            strengths: strengths.filter((item) => typeof item === 'string'),
+            weaknesses: weaknesses.filter((item) => typeof item === 'string'),
+            suggestions: suggestions.filter((item) => typeof item === 'string'),
+            revisedScript,
+        };
     } catch (error) {
-        console.error('Error calling Gemini:', error);
-        throw new Error('Failed to generate script');
+        console.error('Error generating script critique:', error);
+        throw new Error('Failed to critique script');
     }
 }
 

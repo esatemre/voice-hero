@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
                 avgResponseTime: 0,
                 segmentBreakdown: {},
                 versionBreakdown: {},
+                pageBreakdown: {},
             });
         }
 
@@ -59,6 +60,7 @@ export async function GET(request: NextRequest) {
 
         const segmentStats: Record<string, { plays: number; completions: number; engagementRate: number }> = {};
         const versionStats: Record<string, { plays: number; completions: number; engagementRate: number }> = {};
+        const pageStats: Record<string, { plays: number; completions: number; engagementRate: number }> = {};
 
         snapshot.docs.forEach((doc) => {
             const data = doc.data();
@@ -81,6 +83,14 @@ export async function GET(request: NextRequest) {
                     }
                     versionStats[data.audioVersion].plays++;
                 }
+
+                // Initialize page stats
+                if (data.pageUrl) {
+                    if (!pageStats[data.pageUrl]) {
+                        pageStats[data.pageUrl] = { plays: 0, completions: 0, engagementRate: 0 };
+                    }
+                    pageStats[data.pageUrl].plays++;
+                }
             }
 
             // Count completions
@@ -93,6 +103,10 @@ export async function GET(request: NextRequest) {
 
                 if (data.audioVersion && versionStats[data.audioVersion]) {
                     versionStats[data.audioVersion].completions++;
+                }
+
+                if (data.pageUrl && pageStats[data.pageUrl]) {
+                    pageStats[data.pageUrl].completions++;
                 }
             }
 
@@ -123,6 +137,14 @@ export async function GET(request: NextRequest) {
                 : 0;
         });
 
+        // Calculate engagement rates for pages
+        Object.keys(pageStats).forEach((page) => {
+            const stats = pageStats[page];
+            stats.engagementRate = stats.plays > 0
+                ? Math.round((stats.completions / stats.plays) * 100)
+                : 0;
+        });
+
         const uniqueVisitors = sessions.size;
         const listenThroughRate = totalPlays > 0
             ? Math.round((completions / totalPlays) * 100)
@@ -144,6 +166,7 @@ export async function GET(request: NextRequest) {
             avgResponseTime,
             segmentBreakdown: segmentStats,
             versionBreakdown: versionStats,
+            pageBreakdown: pageStats,
         });
     } catch (error) {
         console.error('Stats error:', error);

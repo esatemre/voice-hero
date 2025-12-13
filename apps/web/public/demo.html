@@ -1,16 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>La Maison Dorée - Fine French Cuisine in Paris</title>
-    <meta name="description" content="Experience exquisite French cuisine at La Maison Dorée - Michelin-starred restaurant in the heart of Paris. Book your table today.">
-    
+    <meta name="description"
+        content="Experience exquisite French cuisine at La Maison Dorée - Michelin-starred restaurant in the heart of Paris. Book your table today.">
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <script>
+        // Dynamically set API URL based on current origin (works in dev and production)
+        (function() {
+            const script = document.createElement('script');
+            script.src = '/widget.js';
+            script.setAttribute('data-site-id', 'qmKe2a8TCUHTctDN771R');
+            script.setAttribute('data-api-url', window.location.origin);
+            script.defer = true;
+            document.head.appendChild(script);
+        })();
+    </script>
     <style>
         * {
             margin: 0;
@@ -35,7 +48,9 @@
             overflow-x: hidden;
         }
 
-        h1, h2, h3 {
+        h1,
+        h2,
+        h3 {
             font-family: 'Playfair Display', serif;
             font-weight: 700;
         }
@@ -106,7 +121,7 @@
         .hero {
             height: 100vh;
             background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)),
-                        url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1600&q=80') center/cover no-repeat;
+                url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1600&q=80') center/cover no-repeat;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -126,6 +141,7 @@
                 opacity: 0;
                 transform: translateY(30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -461,6 +477,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Navigation -->
     <nav>
@@ -494,12 +511,12 @@
             <div class="about-text fade-in">
                 <h2>A Culinary Journey</h2>
                 <p>
-                    For over 30 years, La Maison Dorée has been delighting guests with authentic French cuisine 
-                    crafted from the finest seasonal ingredients. Our Michelin-starred chef combines traditional 
+                    For over 30 years, La Maison Dorée has been delighting guests with authentic French cuisine
+                    crafted from the finest seasonal ingredients. Our Michelin-starred chef combines traditional
                     techniques with innovative presentations to create unforgettable dining experiences.
                 </p>
                 <p>
-                    Located in a beautifully restored 18th-century townhouse, our intimate dining rooms provide 
+                    Located in a beautifully restored 18th-century townhouse, our intimate dining rooms provide
                     the perfect setting for both romantic dinners and special celebrations.
                 </p>
                 <a href="#reservation" class="cta-button">Reserve Your Table</a>
@@ -524,7 +541,8 @@
                 </div>
             </div>
             <div class="menu-item fade-in">
-                <img src="https://images.unsplash.com/photo-1558030006-450675393462?w=600&q=80" alt="Beef Wellington" class="menu-item-image">
+                <img src="https://images.unsplash.com/photo-1558030006-450675393462?w=600&q=80" alt="Beef Wellington"
+                    class="menu-item-image">
                 <div class="menu-item-content">
                     <h3>Boeuf Wellington</h3>
                     <p>Premium beef tenderloin wrapped in puff pastry with mushroom duxelles</p>
@@ -549,7 +567,7 @@
             <div class="testimonial-card fade-in">
                 <div class="testimonial-stars">★★★★★</div>
                 <p class="testimonial-text">
-                    "An absolutely extraordinary dining experience. Every dish was a masterpiece, and the service 
+                    "An absolutely extraordinary dining experience. Every dish was a masterpiece, and the service
                     was impeccable. This is fine dining at its absolute best."
                 </p>
                 <p class="testimonial-author">— Marie Laurent, Paris</p>
@@ -557,7 +575,7 @@
             <div class="testimonial-card fade-in">
                 <div class="testimonial-stars">★★★★★</div>
                 <p class="testimonial-text">
-                    "The perfect combination of traditional French cuisine and modern innovation. The wine pairing 
+                    "The perfect combination of traditional French cuisine and modern innovation. The wine pairing
                     was exceptional. We'll definitely be returning!"
                 </p>
                 <p class="testimonial-author">— James Wilson, London</p>
@@ -565,7 +583,7 @@
             <div class="testimonial-card fade-in">
                 <div class="testimonial-stars">★★★★★</div>
                 <p class="testimonial-text">
-                    "From the moment we walked in, we were treated like royalty. The ambiance, food, and attention 
+                    "From the moment we walked in, we were treated like royalty. The ambiance, food, and attention
                     to detail made our anniversary truly special."
                 </p>
                 <p class="testimonial-author">— Sophie Chen, Hong Kong</p>
@@ -655,9 +673,6 @@
             }
         });
     </script>
-
-    <!-- VoiceHero Widget -->
-    <!-- The AI voice agent will appear in the bottom right corner to assist with reservations and inquiries -->
-    <script src="http://localhost:3000/widget.js" data-site-id="REPLACE_WITH_REAL_ID"></script>
 </body>
+
 </html>

@@ -244,10 +244,10 @@
       this.config = {
         scriptUrl: document.currentScript ? document.currentScript.src : '',
         siteId: document.currentScript ? document.currentScript.getAttribute('data-site-id') : null,
-        apiBase: '',
+        apiBase: document.currentScript ? document.currentScript.getAttribute('data-api-url') : '',
       };
 
-      if (this.config.scriptUrl) {
+      if (!this.config.apiBase && this.config.scriptUrl) {
         try {
           this.config.apiBase = new URL(this.config.scriptUrl).origin;
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -478,6 +478,7 @@
         lang: navigator.language,
         isReturning: document.cookie.includes('vh_returning=true'),
         utmSource: params.get('utm_source'),
+        pageUrl: window.location.href.split('?')[0],
       };
     }
 
@@ -490,6 +491,12 @@
         if (!res.ok) return;
 
         this.state.data = await res.json();
+
+        // Check if voice is disabled for this page
+        if (this.state.data.voiceDisabled) {
+          console.log('VoiceHero: Voice is disabled for this page');
+          return;
+        }
 
         // Set segment for analytics tracking
         if (this.state.data.segments && this.state.data.segments.length > 0) {

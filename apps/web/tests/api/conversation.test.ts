@@ -58,15 +58,20 @@ describe('POST /api/conversation', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (saveAudioFile as any).mockResolvedValue('https://storage.googleapis.com/test-bucket/audio/response.mp3');
 
-        // Create FormData
-        const formData = new FormData();
-        formData.append('audio', new Blob(['fake-audio']), 'audio.mp3');
-        formData.append('siteId', 'test-site-id');
+        const mockAudioFile = {
+            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
+        };
+        const formData = {
+            get: (key: string) => {
+                if (key === 'audio') return mockAudioFile;
+                if (key === 'siteId') return 'test-site-id';
+                return null;
+            },
+        } as FormData;
 
-        const request = new Request('http://localhost/api/conversation', {
-            method: 'POST',
-            body: formData,
-        });
+        const request = {
+            formData: async () => formData,
+        } as Request;
 
         const response = await POST(request);
         const data = await response.json();
@@ -86,13 +91,13 @@ describe('POST /api/conversation', () => {
     });
 
     it('should return 400 if audio is missing', async () => {
-        const formData = new FormData();
-        formData.append('siteId', 'test-site-id');
+        const formData = {
+            get: (key: string) => (key === 'siteId' ? 'test-site-id' : null),
+        } as FormData;
 
-        const request = new Request('http://localhost/api/conversation', {
-            method: 'POST',
-            body: formData,
-        });
+        const request = {
+            formData: async () => formData,
+        } as Request;
 
         const response = await POST(request);
         expect(response.status).toBe(400);

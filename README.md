@@ -2,10 +2,11 @@
 
 **Your homepage, but with a self-optimizing 20-second voice pitch.**
 
-> Built for the **Google Cloud x ElevenLabs Hackathon 2025**.
-> *Challenge: ElevenLabs (Conversational, Intelligent, Voice-Driven)*
+> **Built for the Google Cloud x ElevenLabs Hackathon 2025**  
+> *Challenge: ElevenLabs (Conversational, Intelligent, Voice-Driven)*  
+> *Powered by: Google Vertex AI (Gemini) + ElevenLabs AI Voice*
 
-![Voice Hero Demo](https://via.placeholder.com/800x400?text=Voice+Hero+Dashboard)
+![Voice Hero Demo](https://voicehero.prodfact.com/demo.html)
 
 ## 🚀 The Problem
 You fight for every click to your homepage. But once visitors arrive, they all see the same static headline.
@@ -16,22 +17,47 @@ You fight for every click to your homepage. But once visitors arrive, they all s
 Static text doesn't adapt. **Voice does.**
 
 ## 💡 The Solution
-Landing Voice Agent is a "Voice Sales Agent" that lives on your website.
-1. **Detects** who the visitor is (New, Returning, or from a specific Ad).
-2. **Generates** a tailored 20-second pitch using **Google Vertex AI (Gemini)**.
-3. **Speaks** to them using **ElevenLabs** high-fidelity AI voices.
-4. **Learns** from engagement to write better scripts over time.
+Voice Hero is a Landing Voice Agent that turns website homepages into conversational, intelligent voice experiences.
+
+**How it works:**
+1. **Detects** who the visitor is (New, Returning, location, ad source) using real-time context
+2. **Generates** tailored voice scripts using **Google Vertex AI (Gemini Pro)** as an expert copywriter
+3. **Synthesizes** natural speech using **ElevenLabs' 500+ realistic AI voices** (available in 29+ languages)
+4. **Learns** from engagement metrics to continuously improve scripts and maximize conversions
+
+Each visitor hears a personalized pitch. Different segments get different voices and messaging. Static text is replaced with adaptive voice.
 
 ## 🛠️ Tech Stack
 
-### 1. Google Cloud Platform (The Brain)
-- **Vertex AI (Gemini Pro)**: We use Gemini to act as an expert copywriter. It analyzes the product description and generates unique scripts for each visitor segment (e.g., "Write a punchy, 15s intro for a returning visitor who hasn't converted yet").
-- **Firestore**: Stores project config, segments, and generated audio mappings.
-- **Cloud Run / Next.js**: The entire platform is hosted on a scalable serverless architecture.
+### 1. Google Vertex AI (Gemini) - Intelligent Script Generation
+- **Gemini Pro**: Acts as an expert copywriter. Analyzes page content and generates conversion-focused scripts tailored to visitor segments
+- **Context-Aware Prompts**: Generates different pitches based on visitor type (new vs returning), audience segment, language, and tone preferences
+- **Examples of Generated Scripts**: 
+  - "Welcome! Discover how our platform helps brands engage visitors"
+  - "Hey! Great to see you back. Check out our new features"
+  - "Looking for solutions? See why 10,000+ companies trust us"
 
-### 2. ElevenLabs (The Voice)
-- **Text-to-Speech API**: We use the `eleven_monolingual_v1` and Turbo models to generate lifelike speech that captures brand tone (Professional, Energetic, Calm).
-- **Voice Design**: Each segment can have a distinct "persona".
+### 2. ElevenLabs - Natural, Realistic AI Voice
+- **Voice Synthesis**: Use ElevenLabs' Text-to-Speech API with 500+ realistic voices (male, female, different accents and languages)
+- **Voice Personas**: Each audience segment can have a distinct voice personality (Professional, Energetic, Calm, Friendly)
+- **Multilingual Support**: Generate scripts and voice in 29+ languages for global audiences
+- **Audio Quality**: Turbo and High models ensure natural-sounding speech that drives engagement
+- **Voice Design**: Pick voices that match your brand tone and resonate with target audiences
+
+### 3. Firebase - Real-Time Data & Feature Flags
+- **Firestore Database**: Store website details, segment definitions, and voice preferences
+- **Script & Audio Storage**: Keep generated scripts and audio URLs with version history
+- **Analytics Events**: Track visitor engagement, plays, completions, and segment performance
+- **Real-Time Updates**: Dashboard and widget sync instantly when scripts or voices change
+- **Remote Config**: Server-side feature flags for staged rollouts and operational toggles
+  - **Server Flags** (cached 60s): `email_onboarding_enabled`, `new_project_creation_enabled`
+  - **Safe Defaults**: Missing flags fall back to defaults, ensuring backward compatibility
+
+### 4. Next.js - Scalable Platform
+- **Full-Stack Framework**: API routes handle Gemini + ElevenLabs integration
+- **Dashboard**: Intuitive web interface for managing pages, segments, scripts, and voices
+- **Embedded Widget**: Lightweight JavaScript that loads on any website and plays personalized voice pitches
+- **Containerized Deployment**: Deploy using Docker images from GHCR and host with Coolify or any container platform
 
 ## 🏗️ Architecture
 
@@ -52,12 +78,26 @@ graph TD
     end
 ```
 
-## 📦 Getting Started
+## ✨ Core Features
+
+- **Automatic Page Discovery**: Widget detects and indexes all pages on your website
+- **AI Script Generation**: Gemini generates conversion-optimized scripts for each audience segment
+- **Voice Selection**: Choose from 500+ ElevenLabs voices with real-time preview
+- **Smart Segmentation**: Target new visitors, returning customers, ad campaigns, language preferences
+- **Per-Page Customization**: Different scripts and voices for different pages
+- **AI Script Critique**: Get automatic feedback and improvement suggestions for scripts
+- **Real-Time Analytics**: Track engagement per page, segment, and voice
+- **Test as Visitor**: Preview exactly what each visitor will hear based on their context
+- **Multi-Language Support**: Generate scripts and voice in 29+ languages
+- **Visitor Simulator**: Test different visitor contexts before going live
+
+## 🚀 Quick Start (3 minutes)
 
 ### Prerequisites
 - Node.js 18+
-- Google Cloud Service Account (Vertex AI & Firestore enabled)
-- ElevenLabs API Key
+- Google Cloud Account (Vertex AI & Firestore)
+- ElevenLabs Account
+- 5 minutes to grab API keys
 
 ### Installation
 
@@ -69,35 +109,48 @@ graph TD
 
 2. **Install dependencies**
    ```bash
-   npm install
+   pnpm install
    ```
 
-3. **Configure Environment**
-   Copy `.env.example` to `.env.local` and add your keys:
-   ```bash
-   ELEVENLABS_API_KEY=your-elevenlabs-key
+3. **Configure Environment Variables**
    
-   # Firebase
-   NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-auth-domain
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-storage-bucket
-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-   NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
-   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your-measurement-id
-   ```
-
-4. **Run Locally**
+   Copy `.env.example` to `.env.local`:
    ```bash
-   npm run dev
+   cp apps/web/.env.example apps/web/.env.local
+   ```
+   
+   Fill in your API keys:
+   - **ElevenLabs API Key**: Get from https://elevenlabs.io/app/voice-lab
+   - **Firebase Config**: Get from Firebase Console > Project Settings
+   - **Google Cloud Service Account**: For Vertex AI access
+   
+   See [docs/SETUP.md](./docs/SETUP.md) for detailed API key instructions.
+
+4. **Run the Development Server**
+   ```bash
+   pnpm run dev
    ```
 
 5. **Open the Dashboard**
-   Visit `http://localhost:3000/dashboard` to create your first project.
+   Visit `http://localhost:3000/dashboard` and create your first project!
+
+## 📚 Documentation
+
+- **Start here:** [docs/INDEX.md](./docs/INDEX.md)
+- **Setup:** [docs/SETUP.md](./docs/SETUP.md)
+- **Hackathon:** [docs/HACKATHON.md](./docs/HACKATHON.md)
+- **Roadmap:** [docs/ROADMAP.md](./docs/ROADMAP.md)
+- **Feature flags:** [docs/FIREBASE_FEATURE_FLAGS.md](./docs/FIREBASE_FEATURE_FLAGS.md)
+- **Architecture:** [docs/architecture.md](./docs/architecture.md)
 
 ## 🔮 Roadmap
 We have big plans to turn Voice Hero into a fully conversational agent.
-See [ROADMAP.md](./ROADMAP.md) for our vision of two-way voice conversations and reinforcement learning loops.
+See [docs/ROADMAP.md](./docs/ROADMAP.md) for our vision of two-way voice conversations and reinforcement learning loops.
+
+## 🤝 Founder Interest & Early Feedback
+
+Founders we have spoken with want a faster way to sharpen how they explain their product and to make their brand feel more professional as new startups launch every day. Early feedback on VoiceHero has been encouraging, so we plan to keep iterating with humility and curiosity.
 
 ## 📄 License
-MIT License.
+
+MIT License - See [LICENSE](./LICENSE) file for details.

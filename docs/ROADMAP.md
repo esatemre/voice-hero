@@ -2,13 +2,30 @@
 
 Voice Hero is built to evolve from a smart monologue into a fully conversational sales agent. This roadmap outlines our path from the current Hackathon MVP to a production-grade, self-optimizing platform.
 
+## Why We Believe In This
+Early founder feedback has been strong: teams want a faster way to sharpen how they explain their product and to make their brand feel more professional as new startups flood the market. We are continuing with humility and curiosity as we learn and iterate.
+
 ## Phase 1: The Foundation (Current MVP)
 **Goal:** Prove that segment-aware voice intros increase engagement.
 - [x] **Google Cloud Integration**: Vertex AI (Gemini) for script generation.
-- [x] **ElevenLabs Integration**: High-quality TTS for "Rachel" voice.
-- [x] **Segment Detection**: Basic logic for New vs. Returning vs. UTM visitors.
+- [x] **ElevenLabs Integration**: High-quality TTS voice synthesis.
+- [x] **Segment Detection**: New vs. returning vs. UTM visitors.
 - [x] **Widget**: Lightweight JS embed for playback.
-- [x] **Dashboard**: Project and segment management.
+- [x] **Dashboard**: Multi-project overview with status metrics.
+- [x] **Page Discovery**: Link-based discovery, page management, and per-page voice toggles.
+- [x] **Content Snapshots**: Capture page content and surface change alerts.
+- [x] **Script Workflow**: Generation wizard, multi-segment scripts per page, and segment builder UI.
+- [x] **Voice Management**: Voice profiles preview and per-segment voice selection.
+- [x] **Quality Tools**: AI script critique plus script version timeline and restore.
+- [x] **Analytics**: Per-page analytics and live feed.
+- [x] **Visitor Simulator**: Test as a visitor with custom context.
+- [x] **Setup Helpers**: Default segments on project creation and URL auto-fill scraping.
+- [x] **Lifecycle Emails**: Welcome + trigger emails (feature-flagged; requires SMTP2GO and `email_onboarding_enabled`).
+- [x] **Marketing**: Landing page redesign (feature-flagged).
+
+## Phase 1.5: Activation & Onboarding (Rollout)
+**Goal:** Help founders go from first login to live voice in one focused session.
+- [ ] **Onboarding checklist UI**: Progress panel with auto-complete visibility (tracking exists; UI pending).
 
 ## Phase 2: The Conversational Upgrade (ElevenLabs Challenge)
 **Goal:** Transform the widget from a player into an interactive agent.
@@ -34,18 +51,10 @@ Voice Hero is built to evolve from a smart monologue into a fully conversational
 ## Phase 3.5: Automatic Page Intelligence & Voice Adaptation
 **Goal:** Make the system self-maintaining by auto-discovering pages and adapting to content changes.
 
-### Quick Wins (Hackathon-Ready)
-- [ ] **Auto-Initialize Default Segments**: When creating a project, automatically create 3 default segments (New, Returning, Ads) instead of empty state.
-- [ ] **URL Scraper Preview**: Add a "Scrape URL" button that fetches page content and pre-fills the description field.
-- [ ] **Multi-Page Support UI**: Show vision of managing multiple landing pages per project (even if backend only supports one for now).
-
-### Full Epic (Production)
-- [ ] **Auto-Discovery**: Crawl sitemap and detect key landing pages (`/`, `/pricing`, `/product/*`).
-- [ ] **Smart Scraping**: Extract headline, subhead, bullets, CTAs using Gemini to understand page intent.
-- [ ] **Content Snapshots**: Store versioned page content with timestamps.
-- [ ] **Change Detection**: Scheduled scraper that detects significant content changes and triggers re-generation.
-- [ ] **Version History**: Timeline showing page content versions vs. voice script versions for attribution.
-- [ ] **Multi-Website Dashboard**: Workspace → Websites → Pages → Segments hierarchy.
+- [ ] **Auto-Discovery (Sitemap)**: Ingest `sitemap.xml` for broader coverage.
+- [ ] **Smart Scraping**: Use Gemini to infer page intent and structure.
+- [ ] **Scheduled Change Detection**: Crawl on a schedule and track meaningful diffs.
+- [ ] **Auto-Regeneration**: Suggest or trigger script refresh when content shifts.
 
 ## Phase 4: Enterprise Scale
 **Goal:** Support high-traffic SaaS teams.

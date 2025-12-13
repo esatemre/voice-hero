@@ -26,7 +26,7 @@ Self-optimizing voice pitches for your website.
 ### Production Mode
 
 1. Set environment variables in your hosting platform:
-   - **Vercel**: Project Settings → Environment Variables
+   - **Coolify**: Application Settings → Environment Variables
    - **Other platforms**: Set via platform-specific configuration
 
 2. Deploy your application

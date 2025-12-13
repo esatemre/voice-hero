@@ -310,4 +310,69 @@ describe('GET /api/analytics/stats', () => {
         expect(data.conversationRate).toBe(100);
         expect(data.avgResponseTime).toBe(1500);
     });
+
+    it('should calculate metrics by page', async () => {
+        const mockEvents = [
+            {
+                data: () => ({
+                    eventType: 'audio.play',
+                    sessionId: 'session-1',
+                    segmentType: 'new_visitor',
+                    pageUrl: 'https://example.com/page1',
+                    timestamp: { toMillis: () => Date.now() },
+                }),
+            },
+            {
+                data: () => ({
+                    eventType: 'audio.complete',
+                    sessionId: 'session-1',
+                    segmentType: 'new_visitor',
+                    pageUrl: 'https://example.com/page1',
+                    timestamp: { toMillis: () => Date.now() },
+                }),
+            },
+            {
+                data: () => ({
+                    eventType: 'audio.play',
+                    sessionId: 'session-2',
+                    segmentType: 'new_visitor',
+                    pageUrl: 'https://example.com/page2',
+                    timestamp: { toMillis: () => Date.now() },
+                }),
+            },
+            {
+                data: () => ({
+                    eventType: 'audio.play',
+                    sessionId: 'session-3',
+                    segmentType: 'new_visitor',
+                    pageUrl: 'https://example.com/page1',
+                    timestamp: { toMillis: () => Date.now() },
+                }),
+            },
+        ];
+
+        mockGet.mockResolvedValue({
+            docs: mockEvents,
+            empty: false,
+        });
+
+        const request = new NextRequest(
+            'http://localhost/api/analytics/stats?projectId=proj-1'
+        );
+
+        const response = await GET(request);
+        const data = await response.json();
+
+        expect(data.pageBreakdown).toBeDefined();
+        expect(data.pageBreakdown['https://example.com/page1']).toEqual({
+            plays: 2,
+            completions: 1,
+            engagementRate: 50,
+        });
+        expect(data.pageBreakdown['https://example.com/page2']).toEqual({
+            plays: 1,
+            completions: 0,
+            engagementRate: 0,
+        });
+    });
 });

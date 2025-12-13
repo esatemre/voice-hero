@@ -13,7 +13,7 @@ describe('POST /api/generate-script', () => {
         vi.clearAllMocks();
     });
 
-    it('should generate script successfully', async () => {
+    it('should generate script successfully with options', async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (generateScript as any).mockResolvedValue('Generated Script');
 
@@ -24,6 +24,9 @@ describe('POST /api/generate-script', () => {
                 productDescription: 'Desc',
                 segmentType: 'new_visitor',
                 tone: 'friendly',
+                language: 'en-US',
+                lengthSeconds: 25,
+                ctaFocus: 'demo signup',
             }),
         });
 
@@ -32,7 +35,17 @@ describe('POST /api/generate-script', () => {
 
         expect(response.status).toBe(200);
         expect(data.script).toBe('Generated Script');
-        expect(generateScript).toHaveBeenCalledWith('Product', 'Desc', 'new_visitor', 'friendly');
+        expect(generateScript).toHaveBeenCalledWith(
+            'Product',
+            'Desc',
+            'new_visitor',
+            'friendly',
+            {
+                language: 'en-US',
+                lengthSeconds: 25,
+                ctaFocus: 'demo signup',
+            }
+        );
     });
 
     it('should handle errors', async () => {

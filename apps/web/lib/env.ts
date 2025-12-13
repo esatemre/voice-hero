@@ -8,11 +8,30 @@
 
 // Server-side environment variables (not exposed to browser)
 function getServerEnv() {
+    // On client-side, process.env won't have server-only vars, return empty object
+    if (typeof window !== 'undefined') {
+        return {
+            ELEVENLABS_API_KEY: undefined,
+            FIREBASE_PROJECT_ID: undefined,
+            FIREBASE_CLIENT_EMAIL: undefined,
+            FIREBASE_PRIVATE_KEY: undefined,
+            FIREBASE_STORAGE_BUCKET: undefined,
+            SMTP2GO_API_KEY: undefined,
+            SMTP2GO_SENDER: undefined,
+            SMTP2GO_REPLY_TO: undefined,
+        };
+    }
+    
     return {
         ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
         FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
         FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
         FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
+        FIREBASE_STORAGE_BUCKET:
+            process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        SMTP2GO_API_KEY: process.env.SMTP2GO_API_KEY,
+        SMTP2GO_SENDER: process.env.SMTP2GO_SENDER,
+        SMTP2GO_REPLY_TO: process.env.SMTP2GO_REPLY_TO,
     };
 }
 
@@ -31,7 +50,14 @@ function getClientEnv() {
 }
 
 // Validate required server environment variables
+// Only runs on server-side (not in browser)
 function validateServerEnv() {
+    // Skip validation on client-side
+    if (typeof window !== 'undefined') {
+        // Return empty object on client - server env vars should never be accessed in browser
+        return {} as ReturnType<typeof getServerEnv>;
+    }
+
     const env = getServerEnv();
 
     if (!env.ELEVENLABS_API_KEY) {
@@ -40,6 +66,19 @@ function validateServerEnv() {
 
     if (!env.FIREBASE_PROJECT_ID) {
         console.warn('Warning: NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set');
+    }
+
+    const hasAnySmtp =
+        Boolean(env.SMTP2GO_API_KEY) ||
+        Boolean(env.SMTP2GO_SENDER) ||
+        Boolean(env.SMTP2GO_REPLY_TO);
+    if (hasAnySmtp) {
+        if (!env.SMTP2GO_API_KEY) {
+            console.warn('Warning: SMTP2GO_API_KEY is not set');
+        }
+        if (!env.SMTP2GO_SENDER) {
+            console.warn('Warning: SMTP2GO_SENDER is not set');
+        }
     }
 
     return env;
