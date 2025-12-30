@@ -6,7 +6,11 @@
 > *Challenge: ElevenLabs (Conversational, Intelligent, Voice-Driven)*  
 > *Powered by: Google Vertex AI (Gemini) + ElevenLabs AI Voice*
 
-![Voice Hero Demo](https://voicehero.prodfact.com/demo.html)
+[![Live Demo](https://img.shields.io/badge/Demo-Live%20Site-blue?style=for-the-badge)](https://voicehero.prodfact.com)
+[![GitHub](https://img.shields.io/github/license/esatemre/voice-hero?style=for-the-badge)](LICENSE)
+[![Tech Stack](https://img.shields.io/badge/Tech-Next.js%20%7C%20Firebase%20%7C%20Gemini%20%7C%20ElevenLabs-black?style=for-the-badge)](https://github.com/esatemre/voice-hero)
+
+**🎯 Try it live:** [voicehero.prodfact.com](https://voicehero.prodfact.com) | **📖 Demo Page:** [voicehero.prodfact.com/demo.html](https://voicehero.prodfact.com/demo.html)
 
 ## 🚀 The Problem
 You fight for every click to your homepage. But once visitors arrive, they all see the same static headline.
@@ -64,18 +68,23 @@ Each visitor hears a personalized pitch. Different segments get different voices
 ```mermaid
 graph TD
     A[Visitor Lands] -->|JS Widget| B{Context?}
-    B -->|New User| C[Get 'New' Segment]
-    B -->|Returning| D[Get 'Returning' Segment]
-    B -->|?utm_source=ads| E[Get 'Ad' Segment]
+    B -->|New User| C[Get New Segment]
+    B -->|Returning| D[Get Returning Segment]
+    B -->|UTM Source| E[Get Ad Segment]
     
-    C & D & E --> F[Fetch Audio URL]
+    C --> F[Fetch Audio URL]
+    D --> F
+    E --> F
     F --> G[ElevenLabs Audio]
     
-    subgraph "Optimization Loop (Async)"
-        H[Gemini (Vertex AI)] -->|Drafts Script| I[Review/Approve]
-        I -->|Generate| J[ElevenLabs API]
-        J -->|Save URL| K[Firestore]
-    end
+    H[Gemini Vertex AI] -->|Drafts Script| I[Review/Approve]
+    I -->|Generate| J[ElevenLabs API]
+    J -->|Save URL| K[Firestore]
+    
+    style H fill:#e1f5ff
+    style I fill:#e1f5ff
+    style J fill:#e1f5ff
+    style K fill:#e1f5ff
 ```
 
 ## ✨ Core Features
@@ -94,14 +103,14 @@ graph TD
 ## 🚀 Quick Start (3 minutes)
 
 ### Prerequisites
-- Node.js 18+
-- Google Cloud Account (Vertex AI & Firestore)
-- ElevenLabs Account
-- 5 minutes to grab API keys
+- **Node.js** 18+ 
+- **Google Cloud Account** (Vertex AI & Firestore enabled)
+- **ElevenLabs Account** with API key
+- **Firebase Project** with Firestore database
 
 ### Installation
 
-1. **Clone the repo**
+1. **Clone the repository**
    ```bash
    git clone https://github.com/esatemre/voice-hero.git
    cd voice-hero
@@ -114,17 +123,17 @@ graph TD
 
 3. **Configure Environment Variables**
    
-   Copy `.env.example` to `.env.local`:
+   Copy the example environment file:
    ```bash
    cp apps/web/.env.example apps/web/.env.local
    ```
    
-   Fill in your API keys:
-   - **ElevenLabs API Key**: Get from https://elevenlabs.io/app/voice-lab
-   - **Firebase Config**: Get from Firebase Console > Project Settings
-   - **Google Cloud Service Account**: For Vertex AI access
+   Fill in your API keys in `apps/web/.env.local`:
+   - **ElevenLabs API Key**: Get from [ElevenLabs Dashboard](https://elevenlabs.io/app/voice-lab)
+   - **Firebase Config**: Get from [Firebase Console](https://console.firebase.google.com/) > Project Settings
+   - **Google Cloud Service Account**: For Vertex AI access (see [docs/SETUP.md](./docs/SETUP.md))
    
-   See [docs/SETUP.md](./docs/SETUP.md) for detailed API key instructions.
+   📖 **Detailed setup:** See [docs/SETUP.md](./docs/SETUP.md) for complete API key instructions.
 
 4. **Run the Development Server**
    ```bash
@@ -134,23 +143,41 @@ graph TD
 5. **Open the Dashboard**
    Visit `http://localhost:3000/dashboard` and create your first project!
 
+   🎉 **That's it!** You're ready to generate personalized voice pitches for your website.
+
 ## 📚 Documentation
 
-- **Start here:** [docs/INDEX.md](./docs/INDEX.md)
-- **Setup:** [docs/SETUP.md](./docs/SETUP.md)
-- **Hackathon:** [docs/HACKATHON.md](./docs/HACKATHON.md)
-- **Roadmap:** [docs/ROADMAP.md](./docs/ROADMAP.md)
-- **Feature flags:** [docs/FIREBASE_FEATURE_FLAGS.md](./docs/FIREBASE_FEATURE_FLAGS.md)
-- **Architecture:** [docs/architecture.md](./docs/architecture.md)
+| Document | Description |
+|----------|-------------|
+| [**INDEX.md**](./docs/INDEX.md) | Documentation hub - start here |
+| [**SETUP.md**](./docs/SETUP.md) | Complete setup guide with API keys |
+| [**ROADMAP.md**](./docs/ROADMAP.md) | Future features and vision |
+| [**architecture.md**](./docs/architecture.md) | System architecture overview |
+| [**FIREBASE_FEATURE_FLAGS.md**](./docs/FIREBASE_FEATURE_FLAGS.md) | Feature flags reference |
 
 ## 🔮 Roadmap
-We have big plans to turn Voice Hero into a fully conversational agent.
-See [docs/ROADMAP.md](./docs/ROADMAP.md) for our vision of two-way voice conversations and reinforcement learning loops.
+
+We have big plans to turn Voice Hero into a fully conversational agent. See [docs/ROADMAP.md](./docs/ROADMAP.md) for our vision of:
+- **Two-way voice conversations** with ElevenLabs Conversational AI
+- **Reinforcement learning loops** that auto-optimize scripts based on engagement
+- **Multi-armed bandit algorithms** for dynamic A/B testing
+- **Auto-discovery and adaptation** to content changes
 
 ## 🤝 Founder Interest & Early Feedback
 
 Founders we have spoken with want a faster way to sharpen how they explain their product and to make their brand feel more professional as new startups launch every day. Early feedback on VoiceHero has been encouraging, so we plan to keep iterating with humility and curiosity.
 
+## 🏆 Hackathon Submission
+
+**Built for:** Google Cloud x ElevenLabs Hackathon 2025  
+**Challenge:** ElevenLabs (Conversational, Intelligent, Voice-Driven)  
+**Live Demo:** [voicehero.prodfact.com](https://voicehero.prodfact.com)  
+**GitHub:** [github.com/esatemre/voice-hero](https://github.com/esatemre/voice-hero)
+
 ## 📄 License
 
 MIT License - See [LICENSE](./LICENSE) file for details.
+
+---
+
+**Made with ❤️ for the Google Cloud x ElevenLabs Hackathon 2025**

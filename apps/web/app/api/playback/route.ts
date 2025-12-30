@@ -4,6 +4,25 @@ import { Page, PageSegment, Segment } from "@/lib/types";
 
 type AnySegment = Segment | PageSegment;
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+const jsonWithCors = (data: unknown, init?: ResponseInit) =>
+  NextResponse.json(data, {
+    ...init,
+    headers: {
+      ...corsHeaders,
+      ...(init?.headers ?? {}),
+    },
+  });
+
+export function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
 function selectSegment(
   segments: AnySegment[],
   utmSource: string | null,
@@ -39,17 +58,6 @@ function selectSegment(
   return selected;
 }
 
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
-}
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const siteId = searchParams.get("siteId");
@@ -59,15 +67,7 @@ export async function GET(request: Request) {
   const pageUrl = searchParams.get("pageUrl");
 
   if (!siteId) {
-    return NextResponse.json(
-      { error: "Missing siteId" },
-      {
-        status: 400,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
-    );
+    return jsonWithCors({ error: "Missing siteId" }, { status: 400 });
   }
 
   try {
@@ -88,14 +88,7 @@ export async function GET(request: Request) {
         const pageData = pageDoc.data() as Page;
 
         if (pageData.voiceEnabled === false) {
-          return NextResponse.json(
-            { voiceDisabled: true },
-            {
-              headers: {
-                "Access-Control-Allow-Origin": "*",
-              },
-            }
-          );
+          return jsonWithCors({ voiceDisabled: true });
         }
 
         pageId = pageData.id || pageDoc.id;
@@ -118,20 +111,13 @@ export async function GET(request: Request) {
           );
 
           if (selectedPageSegment && selectedPageSegment.audioUrl) {
-            return NextResponse.json(
-              {
-                audioUrl: selectedPageSegment.audioUrl,
-                transcript: selectedPageSegment.scriptContent,
-                label: "Overview",
-                segmentId: selectedPageSegment.id,
-                segmentType: selectedPageSegment.type,
-              },
-              {
-                headers: {
-                  "Access-Control-Allow-Origin": "*",
-                },
-              }
-            );
+            return jsonWithCors({
+              audioUrl: selectedPageSegment.audioUrl,
+              transcript: selectedPageSegment.scriptContent,
+              label: "Overview",
+              segmentId: selectedPageSegment.id,
+              segmentType: selectedPageSegment.type,
+            });
           }
         }
       }
@@ -141,15 +127,7 @@ export async function GET(request: Request) {
     const snapshot = await segmentsRef.get();
 
     if (snapshot.empty) {
-      return NextResponse.json(
-        { error: "No segments found" },
-        {
-          status: 404,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-          },
-        }
-      );
+      return jsonWithCors({ error: "No segments found" }, { status: 404 });
     }
 
     const segments = snapshot.docs.map((doc) => doc.data() as Segment);
@@ -162,41 +140,24 @@ export async function GET(request: Request) {
     );
 
     if (!selectedSegment || !selectedSegment.audioUrl) {
-      return NextResponse.json(
+      return jsonWithCors(
         { error: "No matching segment with audio found" },
-        {
-          status: 404,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-          },
-        }
+        { status: 404 },
       );
     }
 
-    return NextResponse.json(
-      {
-        audioUrl: selectedSegment.audioUrl,
-        transcript: selectedSegment.scriptContent,
-        label: "Overview",
-        segmentId: selectedSegment.id,
-        segmentType: selectedSegment.type,
-      },
-      {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
-    );
+    return jsonWithCors({
+      audioUrl: selectedSegment.audioUrl,
+      transcript: selectedSegment.scriptContent,
+      label: "Overview",
+      segmentId: selectedSegment.id,
+      segmentType: selectedSegment.type,
+    });
   } catch (error) {
     console.error("Error fetching playback:", error);
-    return NextResponse.json(
+    return jsonWithCors(
       { error: "Internal Server Error" },
-      {
-        status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
+      { status: 500 },
     );
   }
 }

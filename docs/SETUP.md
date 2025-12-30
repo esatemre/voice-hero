@@ -135,7 +135,6 @@ voice-hero/
 ├── docs/
 │   ├── INDEX.md                      # Documentation hub
 │   ├── SETUP.md                      # This file
-│   ├── HACKATHON.md                  # Hackathon submission guide
 │   ├── ROADMAP.md                    # Future features and direction
 │   ├── FIREBASE_FEATURE_FLAGS.md     # Feature flags reference
 │   └── architecture.md               # System architecture documentation

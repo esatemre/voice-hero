@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,16 +23,42 @@ import { getServerFeatureFlag } from "@/lib/server-feature-flags";
 export const dynamic = "force-dynamic";
 
 async function getProjects() {
-  const res = await fetch(
-    `${process.env.APP_URL || "http://localhost:3000"}/api/projects`,
-    {
-      cache: "no-store",
+  try {
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    
+    if (!baseUrl) {
+      const headersList = await headers();
+      const host = headersList.get('host') || 'localhost:3000';
+      baseUrl = `http://${host}`;
     }
-  );
-  if (!res.ok) {
-    throw new Error("Failed to fetch projects");
+    
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    
+    try {
+      const res = await fetch(`${baseUrl}/api/projects`, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => 'Unknown error');
+        console.error('Failed to fetch projects:', res.status, errorText);
+        throw new Error(`Failed to fetch projects: ${res.status} ${res.statusText}`);
+      }
+      
+      return res.json() as Promise<Project[]>;
+    } catch (error) {
+      clearTimeout(timeout);
+      console.error('Error fetching projects:', error);
+      // Return empty array on error to prevent page crash
+      return [] as Project[];
+    }
+  } catch (error) {
+    console.error('Error in getProjects:', error);
+    return [] as Project[];
   }
-  return res.json() as Promise<Project[]>;
 }
 
 

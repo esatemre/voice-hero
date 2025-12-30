@@ -8,6 +8,100 @@
   'use strict';
 
   /**
+   * Bot Detection Function
+   * Returns true if the widget should skip loading (bot, scraper, or test environment)
+   * @returns {boolean} True if should skip loading
+   */
+  function shouldSkipLoading() {
+    // Skip loading if not in a browser environment
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return true;
+    }
+
+    // Skip loading during tests (unit tests and e2e tests)
+    const isTest =
+      (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') ||
+      (window.navigator?.userAgent?.includes('Playwright')) ||
+      (window.navigator?.userAgent?.includes('HeadlessChrome'));
+
+    if (isTest) {
+      return true;
+    }
+
+    // Skip loading for bots, scrapers, and non-browser user agents
+    const userAgent = window.navigator?.userAgent?.toLowerCase() || '';
+    
+    // Check for missing user agent (very suspicious)
+    if (!userAgent) {
+      return true;
+    }
+    
+    // Check for known bot/scraper patterns (be very specific to avoid false positives)
+    // Only match patterns that are very unlikely to appear in legitimate browsers
+    const botPatterns = [
+      '/bot', '/crawler', '/spider', '/scraper', // Require leading slash to avoid false matches
+      'curl/', 'wget/', 'python-requests/', 'node-fetch/', 'axios/', 'go-http-client/',
+      'java/', 'php/', 'ruby/', 'perl/',
+      'googlebot/', 'bingbot/', 'slurp/', 'duckduckbot/',
+      'chatgpt', 'claude', 'anthropic', 'openai',
+      'headlesschrome', 'phantomjs'
+    ];
+    
+    // Check if user agent contains any bot pattern (case-insensitive)
+    const isBotOrScraper = botPatterns.some(pattern => {
+      const lowerPattern = pattern.toLowerCase();
+      return userAgent.includes(lowerPattern);
+    });
+    
+    if (isBotOrScraper) {
+      return true;
+    }
+
+    // Check for automation frameworks (more specific checks)
+    const isAutomation =
+      window.navigator?.webdriver === true ||
+      userAgent.includes('selenium') ||
+      userAgent.includes('puppeteer') ||
+      userAgent.includes('playwright') ||
+      userAgent.includes('webdriver');
+
+    if (isAutomation) {
+      return true;
+    }
+
+    // Check for missing critical browser APIs
+    // Note: localStorage might be blocked in some privacy modes, so only check fetch and navigator
+    if (!window.fetch || !window.navigator) {
+      return true;
+    }
+
+    // Check for suspicious screen dimensions
+    const screenWidth = window.screen?.width || 0;
+    const screenHeight = window.screen?.height || 0;
+    const isSuspiciousScreen =
+      screenWidth === 0 ||
+      screenHeight === 0 ||
+      (screenWidth < 100 && screenHeight < 100) ||
+      screenWidth > 10000 ||
+      screenHeight > 10000;
+
+    if (isSuspiciousScreen) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // Early exit if bot detected
+  if (shouldSkipLoading()) {
+    // Debug: Log why widget was skipped (remove in production if needed)
+    if (typeof console !== 'undefined' && console.debug) {
+      console.debug('VoiceHero: Widget loading skipped (bot/scraper detected)');
+    }
+    return;
+  }
+
+  /**
    * Analytics Manager
    * Handles event tracking with real-time and batch fallback modes
    */
@@ -19,20 +113,91 @@
       this.isRealTimeMode = true;
       this.batchInterval = null;
       this.currentSegment = null;
+      this.isBot = this.detectBot();
 
       // Start batch interval as fallback
       this.startBatchInterval();
 
-      // Flush on page unload
-      this.setupUnloadListener();
+      // Note: setupUnloadListener will be called from VoiceHeroWidget with widget instance
+    }
+
+    /**
+     * Detects if the current environment is a bot/scraper.
+     * Provides defense-in-depth in case bot detection is bypassed during initialization.
+     * @returns {boolean} True if bot detected
+     */
+    detectBot() {
+      if (typeof window === 'undefined' || typeof document === 'undefined') {
+        return true;
+      }
+
+      const userAgent = window.navigator?.userAgent?.toLowerCase() || '';
+      return (
+        !userAgent ||
+        userAgent.includes('bot') ||
+        userAgent.includes('crawler') ||
+        userAgent.includes('spider') ||
+        userAgent.includes('scraper') ||
+        userAgent.includes('curl') ||
+        userAgent.includes('wget') ||
+        userAgent.includes('python') ||
+        userAgent.includes('node-fetch') ||
+        userAgent.includes('axios') ||
+        userAgent.includes('go-http-client') ||
+        userAgent.includes('java/') ||
+        userAgent.includes('php') ||
+        userAgent.includes('ruby') ||
+        userAgent.includes('perl') ||
+        userAgent.includes('googlebot') ||
+        userAgent.includes('bingbot') ||
+        userAgent.includes('chatgpt') ||
+        userAgent.includes('claude') ||
+        userAgent.includes('anthropic') ||
+        userAgent.includes('openai') ||
+        window.navigator?.webdriver === true ||
+        !window.navigator?.cookieEnabled
+      );
     }
 
     /**
      * Sets up a listener to flush the event queue when the page is unloaded or hidden.
+     * Also tracks abandoned audio playback if user leaves before completion.
      * Uses navigator.sendBeacon for reliable delivery.
      */
-    setupUnloadListener() {
+    setupUnloadListener(widgetInstance) {
       const flush = () => {
+        // Track abandoned audio if playing
+        if (widgetInstance && widgetInstance.state.audio && widgetInstance.state.isPlaying) {
+          const audio = widgetInstance.state.audio;
+          if (audio.duration && audio.currentTime > 0) {
+            const listeningDuration = audio.currentTime;
+            const completionRate = (listeningDuration / audio.duration) * 100;
+            
+            const abandonedEvent = {
+              sessionId: this.sessionId,
+              eventType: 'audio.abandoned',
+              timestamp: Date.now(),
+              projectId: this.config.siteId,
+              segmentType: this.currentSegment?.type || 'default',
+              segmentId: this.currentSegment?.id || 'default',
+              audioVersion: this.currentSegment?.version ? `v${this.currentSegment.version}` : 'v1',
+              scriptVersion: this.currentSegment?.version?.toString() || '1',
+              audioUrl: this.currentSegment?.audioUrl,
+              metadata: {
+                listeningDuration: listeningDuration,
+                completionRate: Math.round(completionRate * 100) / 100,
+                audioDuration: audio.duration,
+              },
+              userContext: this.getContext(),
+            };
+
+            // Send abandoned event via beacon
+            const blob = new Blob([JSON.stringify({ event: abandonedEvent })], { type: 'application/json' });
+            navigator.sendBeacon(`${this.config.apiBase}/api/analytics`, blob);
+          }
+        }
+
+        // Flush queued events
         if (this.eventQueue.length > 0) {
           const events = [...this.eventQueue];
           this.eventQueue = [];
@@ -130,6 +295,11 @@
      * @param {Object} [metadata={}] - Additional metadata for the event
      */
     track(eventType, metadata = {}) {
+      // Skip tracking if bot detected
+      if (this.isBot) {
+        return;
+      }
+
       const event = {
         sessionId: this.sessionId,
         eventType,
@@ -273,6 +443,9 @@
 
       // Initialize analytics
       this.analytics = new AnalyticsManager(this.config);
+      
+      // Pass widget instance to analytics for unload tracking
+      this.analytics.setupUnloadListener(this);
 
       this.init();
     }
@@ -571,10 +744,15 @@
 
       this.state.audio = new Audio(url);
       this.progressMilestones = { 25: false, 50: false, 75: false, 100: false };
+      this.playStartTime = null;
+      this.audioStartTime = 0;
 
-      // Track audio.play event
-      this.analytics.track('audio.play', {
-        audioDuration: this.state.audio.duration || 0,
+      // Wait for audio metadata to load before tracking
+      this.state.audio.addEventListener('loadedmetadata', () => {
+        // Track audio.play event with duration
+        this.analytics.track('audio.play', {
+          audioDuration: this.state.audio.duration || 0,
+        });
       });
 
       this.state.audio.ontimeupdate = () => {
@@ -585,9 +763,20 @@
       this.state.audio.onended = () => {
         this.state.isPlaying = false;
         this.updatePlayBtn();
+        
+        // Track completion with listening duration
+        const listeningDuration = this.state.audio.duration || 0;
+        const completionRate = 100;
+        
         this.analytics.track('audio.complete', {
-          completionRate: 100,
+          listeningDuration: listeningDuration,
+          completionRate: completionRate,
+          audioDuration: this.state.audio.duration || 0,
         });
+        
+        // Reset tracking state
+        this.playStartTime = null;
+        this.audioStartTime = 0;
       };
     }
 
@@ -616,7 +805,20 @@
     }
 
     collapse() {
-      if (this.state.audio) {
+      if (this.state.audio && this.state.isPlaying) {
+        // Track pause when collapsing widget
+        const listeningDuration = this.state.audio.currentTime || 0;
+        const audioDuration = this.state.audio.duration || 0;
+        const completionRate = audioDuration > 0 
+          ? Math.round((listeningDuration / audioDuration) * 100 * 100) / 100 
+          : 0;
+        
+        this.analytics.track('audio.pause', {
+          listeningDuration: listeningDuration,
+          completionRate: completionRate,
+          audioDuration: audioDuration,
+        });
+        
         this.state.audio.pause();
       }
       this.state.isPlaying = false;
@@ -632,8 +834,24 @@
       if (!this.state.audio) return;
 
       if (this.state.isPlaying) {
+        // Pausing - track listening duration
+        const listeningDuration = this.state.audio.currentTime || 0;
+        const audioDuration = this.state.audio.duration || 0;
+        const completionRate = audioDuration > 0 
+          ? Math.round((listeningDuration / audioDuration) * 100 * 100) / 100 
+          : 0;
+        
+        this.analytics.track('audio.pause', {
+          listeningDuration: listeningDuration,
+          completionRate: completionRate,
+          audioDuration: audioDuration,
+        });
+        
         this.state.audio.pause();
       } else {
+        // Starting to play - track start time
+        this.playStartTime = Date.now();
+        this.audioStartTime = this.state.audio.currentTime || 0;
         this.state.audio.play();
       }
       this.state.isPlaying = !this.state.isPlaying;
@@ -691,7 +909,7 @@
 
     async processConversation(audioBlob) {
       this.elements.micBtn.classList.add('processing');
-      this.elements.transcript.innerText = "Thinking...";
+      this.elements.transcript.innerText = "Processing...";
 
       const formData = new FormData();
       formData.append('audio', audioBlob);
@@ -707,16 +925,23 @@
 
         const data = await res.json();
 
-        // Update UI
-        this.elements.transcript.innerText = data.transcript;
-        this.playAudio(data.audioUrl);
-        this.state.isPlaying = true;
-        this.state.audio.play();
-        this.updatePlayBtn();
+        // Show confirmation message with transcription
+        if (data.transcription && data.transcription.trim()) {
+          this.elements.transcript.innerText = `"${data.transcription}"\n\n${data.message || 'Thank you for your feedback!'}`;
+        } else {
+          this.elements.transcript.innerText = data.message || 'Thank you for your feedback!';
+        }
+
+        // Track interaction saved
+        this.analytics.track('interaction.saved', {
+          hasTranscription: !!data.transcription,
+        });
+
+        // Do NOT play audio response - just show confirmation
 
       } catch (error) {
         console.error('Conversation Error:', error);
-        this.elements.transcript.innerText = "Sorry, I couldn't process that.";
+        this.elements.transcript.innerText = "Sorry, I couldn't process that. Please try again.";
       } finally {
         this.elements.micBtn.classList.remove('processing');
       }

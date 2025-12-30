@@ -45,7 +45,7 @@ function getClientEnv() {
         FIREBASE_MESSAGING_SENDER_ID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
         FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
         FIREBASE_MEASUREMENT_ID: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-        APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+        APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     };
 }
 

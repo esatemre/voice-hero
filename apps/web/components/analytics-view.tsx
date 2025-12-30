@@ -17,7 +17,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { Loader2, Play, Users, MessageSquare, Clock } from "lucide-react";
+import { Loader2, Play, Users, MessageSquare, Clock, Pause, XCircle, MousePointerClick, TrendingUp } from "lucide-react";
 
 interface AnalyticsStats {
   totalPlays: number;
@@ -27,6 +27,16 @@ interface AnalyticsStats {
   conversationStarts: number;
   conversationRate: number;
   avgResponseTime: number;
+  widgetLoads: number;
+  bubbleClicks: number;
+  bubbleClickThroughRate: number;
+  pauses: number;
+  pauseRate: number;
+  abandonments: number;
+  abandonmentRate: number;
+  avgListeningDuration: number;
+  avgCompletionRate: number;
+  progressMilestones: Record<string, number>;
   segmentBreakdown: Record<
     string,
     { plays: number; completions: number; engagementRate: number }
@@ -100,9 +110,17 @@ export default function AnalyticsView({ projectId }: AnalyticsViewProps) {
     engagementRate: data.engagementRate,
   }));
 
+  // Transform progress milestones for chart
+  const progressData = Object.entries(stats.progressMilestones).map(
+    ([milestone, count]) => ({
+      name: `${milestone}%`,
+      count: count,
+    })
+  );
+
   return (
     <div className="space-y-6">
-      {/* Key Metrics */}
+      {/* Key Metrics - Row 1 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -158,8 +176,166 @@ export default function AnalyticsView({ projectId }: AnalyticsViewProps) {
         </Card>
       </div>
 
+      {/* Listening Engagement Metrics - Row 2 */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Avg Listening Duration
+            </CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats.avgListeningDuration > 0
+                ? `${stats.avgListeningDuration.toFixed(1)}s`
+                : "0s"}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Average time listened
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Avg Completion Rate
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats.avgCompletionRate > 0
+                ? `${stats.avgCompletionRate.toFixed(1)}%`
+                : "0%"}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Average completion percentage
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pause Rate</CardTitle>
+            <Pause className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.pauseRate}%</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.pauses} pauses recorded
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Abandonment Rate
+            </CardTitle>
+            <XCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.abandonmentRate}%</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.abandonments} abandoned plays
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Widget Engagement Metrics - Row 3 */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Widget Loads</CardTitle>
+            <Play className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.widgetLoads}</div>
+            <p className="text-xs text-muted-foreground">
+              Total widget initializations
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Bubble Clicks</CardTitle>
+            <MousePointerClick className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.bubbleClicks}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.bubbleClickThroughRate}% click-through rate
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Click-Through Rate
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats.bubbleClickThroughRate}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Clicks per widget load
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Charts */}
       <div className="grid gap-4">
+        {progressData.some((d) => d.count > 0) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Progress Milestones</CardTitle>
+              <CardDescription>
+                Number of users who reached each progress milestone (25%, 50%, 75%).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pl-2">
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={progressData}>
+                    <XAxis
+                      dataKey="name"
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `${value}`}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "transparent" }}
+                      contentStyle={{
+                        borderRadius: "8px",
+                        border: "none",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                      }}
+                    />
+                    <Legend />
+                    <Bar
+                      dataKey="count"
+                      name="Users Reached"
+                      fill="#000000"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Performance by Segment</CardTitle>

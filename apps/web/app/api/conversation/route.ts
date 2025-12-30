@@ -1,18 +1,24 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { generateConversationResponse } from '@/lib/gemini';
-import { ElevenLabsError, generateVoice } from '@/lib/elevenlabs';
-import { saveAudioFile } from '@/lib/storage';
+import { transcribeUserAudio } from '@/lib/gemini';
 
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+const jsonWithCors = (data: unknown, init?: ResponseInit) =>
+    NextResponse.json(data, {
+        ...init,
+        headers: {
+            ...corsHeaders,
+            ...(init?.headers ?? {}),
+        },
+    });
+
+export function OPTIONS() {
+    return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
 export async function POST(request: Request) {
@@ -22,114 +28,47 @@ export async function POST(request: Request) {
         const siteId = formData.get('siteId') as string;
 
         if (!audioFile || !siteId) {
-            return NextResponse.json(
-                { error: 'Missing audio or siteId' },
-                {
-                    status: 400,
-                    headers: {
-                        "Access-Control-Allow-Origin": "*",
-                    },
-                }
-            );
+            return jsonWithCors({ error: 'Missing audio or siteId' }, { status: 400 });
         }
 
-        // 1. Get Project Context
+        // 1. Verify Project Exists
         const db = getDb();
         const projectDoc = await db.collection('projects').doc(siteId).get();
 
         if (!projectDoc.exists) {
-            return NextResponse.json(
-                { error: 'Project not found' },
-                {
-                    status: 404,
-                    headers: {
-                        "Access-Control-Allow-Origin": "*",
-                    },
-                }
-            );
+            return jsonWithCors({ error: 'Project not found' }, { status: 404 });
         }
-
-        const project = projectDoc.data();
-        const context = {
-            name: project?.name || 'Product',
-            summary: project?.aiSummary || '',
-            details: project?.aiDetails || '',
-        };
 
         // 2. Convert File to Buffer
         const arrayBuffer = await audioFile.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        // 3. Generate Text Response (Gemini Multimodal)
-        const transcript = await generateConversationResponse(buffer, context);
+        // 3. Transcribe User Audio (extract what they said)
+        const transcription = await transcribeUserAudio(buffer);
 
-        // 4. Generate Audio Response (ElevenLabs)
-        const audioResponseBuffer = await generateVoice(transcript);
+        // 4. Save Transcription to Interaction Pool
+        // Store in projects/{projectId}/interactions collection
+        const interactionsRef = db
+            .collection('projects')
+            .doc(siteId)
+            .collection('interactions');
 
-        // 5. Save Audio File
-        const audioUrl = await saveAudioFile(audioResponseBuffer, `conversation-${siteId}`);
+        await interactionsRef.add({
+            transcription: transcription,
+            timestamp: new Date(),
+            createdAt: new Date(),
+            // Note: We do NOT save the audio file to reduce storage costs
+        });
 
-        return NextResponse.json(
-            {
-                audioUrl,
-                transcript,
-            },
-            {
-                headers: {
-                    "Access-Control-Allow-Origin": "*",
-                },
-            }
-        );
+        // 5. Return success (no audio response)
+        return jsonWithCors({
+            success: true,
+            message: 'Thank you for your feedback!',
+            transcription: transcription, // Return transcription for UI display
+        });
 
     } catch (error) {
         console.error('Conversation API Error:', error);
-
-        if (error instanceof ElevenLabsError) {
-            const message = error.message || 'Failed to process conversation';
-            const normalizedMessage = message.toLowerCase();
-            let status = error.statusCode || 500;
-            let code = 'elevenlabs_error';
-            let responseMessage = message;
-
-            if (normalizedMessage.includes('model') && normalizedMessage.includes('deprecat')) {
-                status = 400;
-                code = 'model_deprecated';
-                responseMessage = 'Voice model deprecated. Please switch to eleven_turbo_v2_5.';
-            } else if (error.type === 'missing_api_key') {
-                status = 500;
-                code = 'missing_api_key';
-                responseMessage = 'Missing ElevenLabs API key on the server.';
-            } else if (error.statusCode === 401 || normalizedMessage.includes('api key') || normalizedMessage.includes('unauthorized')) {
-                status = 401;
-                code = 'invalid_api_key';
-                responseMessage = 'Invalid ElevenLabs API key.';
-            } else if (error.statusCode === 429 || normalizedMessage.includes('rate limit')) {
-                status = 429;
-                code = 'rate_limited';
-                responseMessage = 'ElevenLabs rate limit reached. Please retry shortly.';
-            } else if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
-                status = error.statusCode;
-            }
-
-            return NextResponse.json(
-                { error: responseMessage, code, details: error.details },
-                {
-                    status,
-                    headers: {
-                        "Access-Control-Allow-Origin": "*",
-                    },
-                }
-            );
-        }
-
-        return NextResponse.json(
-            { error: 'Failed to process conversation' },
-            {
-                status: 500,
-                headers: {
-                    "Access-Control-Allow-Origin": "*",
-                },
-            }
-        );
+        return jsonWithCors({ error: 'Failed to process conversation' }, { status: 500 });
     }
 }

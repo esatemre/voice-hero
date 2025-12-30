@@ -1,6 +1,6 @@
 # Voice Hero Roadmap
 
-Voice Hero is built to evolve from a smart monologue into a fully conversational sales agent. This roadmap outlines our path from the current Hackathon MVP to a production-grade, self-optimizing platform.
+Voice Hero is built to evolve from a smart monologue into a fully conversational sales agent. This roadmap outlines our path from the current MVP to a production-grade, self-optimizing platform.
 
 ## Why We Believe In This
 Early founder feedback has been strong: teams want a faster way to sharpen how they explain their product and to make their brand feel more professional as new startups flood the market. We are continuing with humility and curiosity as we learn and iterate.
@@ -64,4 +64,3 @@ Early founder feedback has been strong: teams want a faster way to sharpen how t
 - [ ] **Custom Voice Clones**: Allow founders to clone their own voice for a personal touch.
 
 ---
-*Built for the Google Cloud x ElevenLabs Hackathon 2025.*

@@ -14,26 +14,10 @@ const nextConfig: NextConfig = {
         ]
       },
       {
-        source: "/api/playback",
-        headers: [
-          { key: "Access-Control-Allow-Origin", value: "*" },
-          { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS" },
-          { key: "Access-Control-Allow-Headers", value: "Content-Type" },
-        ]
-      },
-      {
-        source: "/api/conversation",
-        headers: [
-          { key: "Access-Control-Allow-Origin", value: "*" },
-          { key: "Access-Control-Allow-Methods", value: "POST,OPTIONS" },
-          { key: "Access-Control-Allow-Headers", value: "Content-Type" },
-        ]
-      },
-      {
         source: "/widget.js",
         headers: [
           { key: "Access-Control-Allow-Origin", value: "*" },
-          { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS" },
+          { key: "Access-Control-Allow-Methods", value: "GET" },
         ]
       }
     ]

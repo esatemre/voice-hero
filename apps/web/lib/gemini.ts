@@ -204,6 +204,36 @@ export async function processScrapedContent(
     }
 }
 
+export async function transcribeUserAudio(
+    audioBuffer: Buffer
+): Promise<string> {
+    const prompt = `
+    Transcribe the user's speech from this audio recording.
+    Return only the exact words the user said, without any additional commentary or formatting.
+    If the audio is unclear or contains no speech, return an empty string.
+    `;
+
+    const audioBase64 = audioBuffer.toString('base64');
+
+    try {
+        const model = ensureModel();
+        const result = await model.generateContent([
+            prompt,
+            {
+                inlineData: {
+                    mimeType: 'audio/mp3',
+                    data: audioBase64
+                }
+            }
+        ]);
+        const response = result.response;
+        return response.text().trim();
+    } catch (error) {
+        console.error('Error transcribing audio:', error);
+        throw new Error('Failed to transcribe audio');
+    }
+}
+
 export async function generateConversationResponse(
     audioBuffer: Buffer,
     context: { name: string; summary: string; details: string }

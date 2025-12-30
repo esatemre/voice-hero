@@ -35,7 +35,10 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get("token");
 
   const result = await unsubscribeEmail(projectId, token);
-  const redirectUrl = new URL(clientEnv.APP_URL);
+  
+  // Fallback to request origin if APP_URL is not set
+  const baseUrl = clientEnv.APP_URL || new URL(request.url).origin;
+  const redirectUrl = new URL(baseUrl);
   redirectUrl.pathname = `/dashboard/${projectId}`;
   redirectUrl.searchParams.set("emailOptOut", result.ok ? "1" : "0");
 

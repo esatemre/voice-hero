@@ -62,6 +62,7 @@ import VoiceProfilesView from "@/components/voice-profiles-view";
 import ScriptWizard from "@/components/script-wizard";
 import ScriptCritiquePanel from "@/components/script-critique-panel";
 import VisitorSimulator from "@/components/visitor-simulator";
+import InteractionsView from "@/components/interactions-view";
 
 import ProjectSettingsDialog from "@/components/project-settings-dialog";
 
@@ -538,6 +539,7 @@ export default function ProjectView({
               <TabsTrigger value="pages">Pages</TabsTrigger>
               <TabsTrigger value="voices">Voices</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="feedback">Voice Feedback</TabsTrigger>
               <TabsTrigger value="integration">Integration</TabsTrigger>
             </TabsList>
 
@@ -936,6 +938,10 @@ export default function ProjectView({
               <AnalyticsView projectId={project.id} />
             </TabsContent>
 
+            <TabsContent value="feedback">
+              <InteractionsView projectId={project.id} />
+            </TabsContent>
+
             <TabsContent value="integration">
               <Card>
                 <CardHeader>
@@ -952,6 +958,37 @@ export default function ProjectView({
                   </div>
 
                   <div className="mt-8 space-y-4">
+                    <Card className="border-primary/20 bg-primary/5">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <MessageSquareText className="h-5 w-5" />
+                          Voice Feedback Collection
+                        </CardTitle>
+                        <CardDescription>
+                          Your widget includes a built-in microphone feature that allows visitors 
+                          to provide instant voice feedback about your voice pitch.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm text-muted-foreground space-y-2">
+                          <p>
+                            <strong>How it works:</strong> Visitors can click the microphone button 
+                            in the widget and speak their feedback. Their voice is automatically 
+                            transcribed and saved to your <strong>Voice Feedback</strong> tab for review.
+                          </p>
+                          <p>
+                            <strong>Benefits:</strong> Collect real-time insights about what users think 
+                            about your voice pitch, gather suggestions for improvement, and understand 
+                            user sentiment without any additional setup.
+                          </p>
+                          <p className="text-xs pt-2">
+                            💡 <strong>Tip:</strong> Check the <strong>Voice Feedback</strong> tab to 
+                            see all collected feedback and insights.
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
                     <h3 className="text-lg font-semibold">
                       Troubleshooting & FAQ
                     </h3>
@@ -989,6 +1026,87 @@ async headers() {
                               <strong>Note:</strong> For Vercel, Netlify, or
                               other platforms, check their documentation for
                               adding custom headers to static files.
+                            </p>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="cors-nextjs-proxy">
+                        <AccordionTrigger>
+                          Using Next.js? Eliminate CORS with a same-origin proxy?
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-3">
+                            <p className="text-sm text-muted-foreground">
+                              If you're using Next.js, you can eliminate CORS
+                              issues entirely by using a same-origin proxy. This
+                              makes the widget fetch from your own domain, and
+                              Next.js forwards the requests to VoiceHero.
+                            </p>
+                            <div className="space-y-4">
+                              <div>
+                                <p className="text-xs font-semibold mb-2">
+                                  1. Update your widget code to use a
+                                  same-origin path:
+                                </p>
+                                <div className="rounded-md bg-muted p-4">
+                                  <pre className="text-xs overflow-x-auto whitespace-pre">
+{`<script 
+  src="https://voicehero.prodfact.com/widget.js" 
+  data-site-id="YOUR_SITE_ID" 
+  data-api-url="/voicehero" 
+  defer
+></script>`}
+                                  </pre>
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold mb-2">
+                                  2. Add a rewrite rule in your{" "}
+                                  <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                                    next.config.js
+                                  </code>{" "}
+                                  or{" "}
+                                  <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                                    next.config.ts
+                                  </code>
+                                  :
+                                </p>
+                                <div className="rounded-md bg-muted p-4">
+                                  <pre className="text-xs overflow-x-auto whitespace-pre">
+{`// next.config.js or next.config.ts
+const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/voicehero/api/:path*',
+        destination: 'https://voicehero.prodfact.com/api/:path*',
+      },
+    ];
+  },
+};
+
+module.exports = nextConfig;`}
+                                  </pre>
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              <strong>How it works:</strong> The widget now
+                              fetches from <code className="text-xs bg-muted px-1 py-0.5 rounded">/voicehero/api/...</code> (same
+                              origin), and Next.js automatically proxies these
+                              requests to VoiceHero. This eliminates CORS
+                              restrictions since all requests appear to come
+                              from your own domain.
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              <strong>Note:</strong> Replace{" "}
+                              <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                                voicehero.prodfact.com
+                              </code>{" "}
+                              with your actual VoiceHero domain if different.
+                              Restart your Next.js dev server after making
+                              changes.
                             </p>
                           </div>
                         </AccordionContent>

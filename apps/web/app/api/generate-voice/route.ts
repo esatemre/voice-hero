@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     const audioBuffer = await generateVoice(text, voiceId);
 
     // In a real app, we would upload this buffer to Google Cloud Storage
-    // For MVP/Hackathon, we might just return the base64 or a temporary URL if we can't set up GCS easily.
+    // For MVP, we might just return the base64 or a temporary URL if we can't set up GCS easily.
     // However, the plan says "Stored directly as ElevenLabs URLs, or Downloaded and put in Cloud Storage".
     // ElevenLabs doesn't give a permanent URL unless we use their history API, but even then it's better to host it.
     // Let's assume we have GCS setup or we can just return base64 for the immediate demo if GCS is too much friction.
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
 
     // Actually, let's implement a simple file upload to GCS if we have the credentials.
     // If not, we can save to local disk (in `public/audio`) since we are running locally or on a simple server.
-    // Since this is a hackathon project running locally for now, `public/audio` is the easiest.
+    // For local development, `public/audio` can be used, but in production we use Firebase Storage.
 
     // Note: `public` folder in Next.js is static. We can't write to it at runtime in production.
     // Audio files are stored in Firebase Storage instead for production deployments.

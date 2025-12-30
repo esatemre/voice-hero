@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { maybeSendOnboardingEmail } from '@/lib/onboarding-email';
 
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+const jsonWithCors = (data: unknown, init?: ResponseInit) =>
+    NextResponse.json(data, {
+        ...init,
+        headers: {
+            ...corsHeaders,
+            ...(init?.headers ?? {}),
+        },
+    });
+
 interface AnalyticsEvent {
     sessionId: string;
     eventType: string;
@@ -49,6 +64,10 @@ function validateEvent(event: any): event is AnalyticsEvent {
     return true;
 }
 
+export function OPTIONS() {
+    return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
@@ -59,7 +78,7 @@ export async function POST(request: NextRequest) {
             const event = body.event;
 
             if (!validateEvent(event)) {
-                return NextResponse.json(
+                return jsonWithCors(
                     { error: 'Invalid event data. Missing required fields.' },
                     { status: 400 }
                 );
@@ -83,7 +102,7 @@ export async function POST(request: NextRequest) {
                 });
             }
 
-            return NextResponse.json({ success: true });
+            return jsonWithCors({ success: true });
         }
 
         // Handle batched events
@@ -93,7 +112,7 @@ export async function POST(request: NextRequest) {
             // Validate all events
             for (const event of events) {
                 if (!validateEvent(event)) {
-                    return NextResponse.json(
+                    return jsonWithCors(
                         { error: 'Invalid event data in batch. Missing required fields.' },
                         { status: 400 }
                     );
@@ -131,19 +150,19 @@ export async function POST(request: NextRequest) {
                 });
             });
 
-            return NextResponse.json({
+            return jsonWithCors({
                 success: true,
                 count: events.length,
             });
         }
 
-        return NextResponse.json(
+        return jsonWithCors(
             { error: 'Request must contain either "event" or "events" field' },
             { status: 400 }
         );
     } catch (error) {
         console.error('Analytics error:', error);
-        return NextResponse.json(
+        return jsonWithCors(
             { error: 'Failed to store analytics event' },
             { status: 500 }
         );
