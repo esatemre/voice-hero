@@ -71,6 +71,14 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get("token");
 
   const result = await verifyEmail(projectId, token);
+  
+  if (!clientEnv.APP_URL) {
+    return NextResponse.json(
+      { success: false, message: "APP_URL is not configured" },
+      { status: 500 },
+    );
+  }
+  
   const redirectUrl = new URL(clientEnv.APP_URL);
   redirectUrl.pathname = `/dashboard/${projectId}`;
   redirectUrl.searchParams.set(
