@@ -7,7 +7,6 @@
 > *Powered by: Google Vertex AI (Gemini) + ElevenLabs AI Voice*
 
 [![Live Demo](https://img.shields.io/badge/Demo-Live%20Site-blue?style=for-the-badge)](https://voicehero.prodfact.com)
-[![GitHub](https://img.shields.io/github/license/esatemre/voice-hero?style=for-the-badge)](LICENSE)
 [![Tech Stack](https://img.shields.io/badge/Tech-Next.js%20%7C%20Firebase%20%7C%20Gemini%20%7C%20ElevenLabs-black?style=for-the-badge)](https://github.com/esatemre/voice-hero)
 
 **🎯 Try it live:** [voicehero.prodfact.com](https://voicehero.prodfact.com) | **📖 Demo Page:** [voicehero.prodfact.com/demo.html](https://voicehero.prodfact.com/demo.html)
